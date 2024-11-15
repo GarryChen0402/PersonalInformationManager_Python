@@ -1,6 +1,6 @@
 import os
 import shutil
-from Configuration import *
+from .Configuration import *
 
 
 def init_folder():

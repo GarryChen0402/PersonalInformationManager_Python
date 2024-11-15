@@ -1,10 +1,12 @@
-DATA_ROOT_PATH = '..\\DataFiles'
+DATA_ROOT_PATH = 'DataFiles'
 # USER_DIR  = 'Users'
 SUB_DIR = {
     'USER_DIR': 'Users'
 }
 
-
+TEXT_FILE = {
+    'USER_FILE': 'user_data.txt'
+}
 
 
 
