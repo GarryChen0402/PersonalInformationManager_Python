@@ -1,1 +1,2 @@
-0	gyc	00000000	0	18	['gychen0402@foxmail.com', 'gyc2002051342@outlook.com']
+0	garry	051342gyc	2	22	[]
+1	gyc	0000	2	18	[]

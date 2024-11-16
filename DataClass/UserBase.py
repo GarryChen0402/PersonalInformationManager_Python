@@ -10,7 +10,7 @@ class Userbase(object):
 
 
     def __str__(self):
-        return f'{self.uid}\t{self.username}\t\t\t{self.password}\t{self.permission_level}\t\t\t\t\t{self.age}\t\t\t{self.emails}'
+        return f'{self.uid}\t{self.username}\t{self.password}\t{self.permission_level}\t{self.age}\t{self.emails}'
 
     def add_email(self, email:str):
         self.emails.append(email)
