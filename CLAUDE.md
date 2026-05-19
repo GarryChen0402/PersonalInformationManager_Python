@@ -4,22 +4,32 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Personal Information Manager — a Python CLI application for managing user records. This is a Python learning project. The codebase was cleared in November 2024 and may be restarted.
+Personal Information Manager (PIM) — a Python Tkinter GUI application for managing personal information. This is a Python learning project. Zero external dependencies beyond Python stdlib.
 
-## Previous Architecture (from git history)
+## Architecture
 
-The original codebase followed this structure:
+4-layer architecture: **View → Service → Model → Storage**
 
-- **`main.py`** — Entry point. Calls `CMDViewer.start_simulate_gui(username)`.
-- **`DataClass/`** — User model hierarchy: `Userbase` (base class) → `Admin` (permission_level=0) and `CommonUser` (permission_level=2). Users have uid, username, age, password, emails list.
-- **`Utils/`** — `Configuration.py` (path constants for data storage), `Initialization.py` (creates data directories), `UserData.py` (save/load users as pipe-delimited text files, user registration).
-- **`Views/`** — `CMDViewer.py` — Terminal-based menu loop (display users, register user, exit). Clears screen between views.
-- **`DataFiles/Users/user_data.txt`** — Plain text persistence for user records.
-- **`Tests/`** — Test directory (was empty).
+- **`main.py`** — Entry point. Calls `ensure_directories()` then launches Tkinter `App`.
+- **`Core/`** — Infrastructure: `Config.py` (path constants, `ensure_directories()`), `Storage.py` (JSONFileStorage base class with atomic writes), `Exceptions.py` (PIMException hierarchy).
+- **`Models/`** — Python `@dataclass` classes with `from_dict()`/`to_dict()` methods. Re-exported via `__init__.py`.
+- **`Services/`** — Business logic managers. Each references paths via `Config.SKILL_PATH` (module reference, not captured at import). Re-exported via `__init__.py`.
+- **`Views/`** — Tkinter GUI pages. `App.py` (main window + status bar), `NavFrame.py` (left nav 150px), per-module pages, `Widgets.py` (shared controls).
+- **`Data/`** — Auto-created data directories: `books/`, `backups/`, plus per-module JSON files.
+- **`Tests/`** — Unit and integration tests (100 tests, zero dependencies).
 
-## Key Patterns from Previous Implementation
+## Key Patterns
 
-- No external dependencies beyond Python stdlib (the old code had a stray `sqlalchemy` import in `UserData.py` which was unused).
-- Text-file persistence: users serialized as `uid\tusername\tpassword\tpermission_level\tage\temails` — one record per line, emails stored as Python list literals parsed with `eval()`.
-- Module-level imports in `__init__.py` files to re-export classes (e.g., `from .UserBase import Userbase`).
-- No setup.py, requirements.txt, or virtual environment — run directly with `python main.py`.
+- **Zero dependencies** — stdlib only. No pip install required.
+- **JSON persistence** — `JSONFileStorage` base class provides CRUD, search, query. Atomic writes via tmp file + `os.replace()`. Auto UUID ids and timestamps.
+- **Path references** — All service managers import `Core.Config` as a module and reference `Config.SKILL_PATH` etc. dynamically (NOT captured at import time via `from Core.Config import SKILL_PATH`). This allows tests to redirect data paths by modifying `Config` attributes.
+- **Profile is singleton** — Stored as JSON object (not list). ProfileManager has its own `_load`/`_save` methods.
+- **Password encoding** — base64 encode/decode (not encryption, just obfuscation).
+- **PDF handling** — Header validation (`b"%PDF"` check), copied to `Data/books/` with UUID filename, opened via `os.startfile`/`subprocess`.
+- **Same-day status** — Adding a status record for an existing date auto-updates the existing record.
+- **GUI pattern** — Pages receive `set_status` callable (not raw Label). Page switching via `pack_forget()`/`pack()`. DashboardPage also receives `navigate` callback.
+- **Views/Widgets.py** — Shared widgets: SearchBar, FormDialog (Toplevel modal), ConfirmDialog, DateRangePicker, StatsBar, KeywordEntry (tag chips).
+- **Knowledge Model** — Single `KnowledgeItem` with `item_type` field ("note"/"ebook"). Unified category/keyword system.
+- **Backup** — Full JSON backup with per-module selective restore. BackupManager uses `_module_paths()` function (not module-level dict) to resolve paths dynamically.
+- **Tests** — Use temp directories. Redirect `Config.*` paths in `setUpClass`/`tearDownClass`. Call `os.remove()` in `setUp` for clean state.
+- **No setup.py, requirements.txt, or virtual environment** — run directly with `python main.py`.

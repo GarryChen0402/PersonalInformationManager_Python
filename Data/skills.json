@@ -16,5 +16,685 @@
     "description": "",
     "id": "809c5dcd-9421-4b45-8f49-6dbd64f20e45",
     "created_at": "2026-05-19 16:48:22"
+  },
+  {
+    "name": "Python",
+    "category": "编程语言",
+    "level": 4,
+    "hours_spent": 200.0,
+    "description": "",
+    "id": "a27f5515-809e-4fe9-a259-1fa2cf3ea24a",
+    "created_at": "2026-05-19 17:47:07"
+  },
+  {
+    "name": "Mystery",
+    "category": "其他",
+    "level": 3,
+    "hours_spent": 50.0,
+    "description": "",
+    "id": "6a8ce8c4-95f0-493f-883c-3d15794b2d2b",
+    "created_at": "2026-05-19 17:47:07"
+  },
+  {
+    "name": "A",
+    "category": "编程语言",
+    "level": 3,
+    "hours_spent": 10.0,
+    "description": "",
+    "id": "6c81bcc2-15a8-4e23-9e1c-3b9be6a64dc6",
+    "created_at": "2026-05-19 17:47:07"
+  },
+  {
+    "name": "B",
+    "category": "工具",
+    "level": 3,
+    "hours_spent": 10.0,
+    "description": "",
+    "id": "a5e83568-72af-41fa-b447-581184c5bfae",
+    "created_at": "2026-05-19 17:47:07"
+  },
+  {
+    "name": "A",
+    "category": "工具",
+    "level": 2,
+    "hours_spent": 10.0,
+    "description": "",
+    "id": "3fdc480e-b841-4f09-97a6-2244fa85193e",
+    "created_at": "2026-05-19 17:47:07"
+  },
+  {
+    "name": "B",
+    "category": "编程语言",
+    "level": 5,
+    "hours_spent": 100.0,
+    "description": "",
+    "id": "97a7cd1e-4b90-4f38-b483-b6f5e3746d17",
+    "created_at": "2026-05-19 17:47:07"
+  },
+  {
+    "name": "Python",
+    "category": "编程语言",
+    "level": 4,
+    "hours_spent": 200.0,
+    "description": "",
+    "id": "8385c8f9-7815-4a07-ae61-d2831dbee424",
+    "created_at": "2026-05-19 17:47:07"
+  },
+  {
+    "name": "Vim",
+    "category": "工具",
+    "level": 3,
+    "hours_spent": 50.0,
+    "description": "",
+    "id": "696bb998-b05e-4aa5-817b-521974a89d4d",
+    "created_at": "2026-05-19 17:47:07"
+  },
+  {
+    "name": "Python编程",
+    "category": "编程语言",
+    "level": 4,
+    "hours_spent": 200.0,
+    "description": "后端开发",
+    "id": "e8f9b207-6e11-4627-b708-87e4c21277fe",
+    "created_at": "2026-05-19 17:47:07"
+  },
+  {
+    "name": "Excel",
+    "category": "工具",
+    "level": 3,
+    "hours_spent": 30.0,
+    "description": "办公软件",
+    "id": "c1e599cc-25d3-4e4c-9641-3c9fe503b0b2",
+    "created_at": "2026-05-19 17:47:07"
+  },
+  {
+    "name": "A",
+    "category": "编程语言",
+    "level": 4,
+    "hours_spent": 100.0,
+    "description": "",
+    "id": "abb90efe-a59c-4257-8b4c-1e85a47cb1f1",
+    "created_at": "2026-05-19 17:47:07"
+  },
+  {
+    "name": "B",
+    "category": "编程语言",
+    "level": 2,
+    "hours_spent": 50.0,
+    "description": "",
+    "id": "e81777c5-efb8-4af1-a16f-7d7dc71c9da8",
+    "created_at": "2026-05-19 17:47:07"
+  },
+  {
+    "name": "C",
+    "category": "工具",
+    "level": 3,
+    "hours_spent": 30.0,
+    "description": "",
+    "id": "6fba8b2d-4bab-432c-a66f-942653c35aea",
+    "created_at": "2026-05-19 17:47:07"
+  },
+  {
+    "name": "Python",
+    "category": "编程语言",
+    "level": 5,
+    "hours_spent": 150.0,
+    "description": "",
+    "id": "a7fb9fbb-24d2-4f5e-a958-4a3e4c4924b8",
+    "created_at": "2026-05-19 17:47:07",
+    "updated_at": "2026-05-19 17:47:07"
+  },
+  {
+    "name": "Python",
+    "category": "编程语言",
+    "level": 3,
+    "hours_spent": 100.0,
+    "description": "",
+    "id": "5667e842-0d96-47ff-a912-266f4ea9ddff",
+    "created_at": "2026-05-19 17:47:07"
+  },
+  {
+    "name": "Python",
+    "category": "编程语言",
+    "level": 4,
+    "hours_spent": 200.0,
+    "description": "",
+    "id": "772a999b-447e-4e89-bd97-c6c68397809f",
+    "created_at": "2026-05-19 17:48:49"
+  },
+  {
+    "name": "Mystery",
+    "category": "其他",
+    "level": 3,
+    "hours_spent": 50.0,
+    "description": "",
+    "id": "cc9e2841-fc40-429d-b59e-cc54a4373152",
+    "created_at": "2026-05-19 17:48:49"
+  },
+  {
+    "name": "A",
+    "category": "编程语言",
+    "level": 3,
+    "hours_spent": 10.0,
+    "description": "",
+    "id": "113c57c6-7fbc-4ec5-bfc1-ce75f1603a44",
+    "created_at": "2026-05-19 17:48:49"
+  },
+  {
+    "name": "B",
+    "category": "工具",
+    "level": 3,
+    "hours_spent": 10.0,
+    "description": "",
+    "id": "b4107466-57e0-49f2-917e-fcc9e225764b",
+    "created_at": "2026-05-19 17:48:49"
+  },
+  {
+    "name": "A",
+    "category": "工具",
+    "level": 2,
+    "hours_spent": 10.0,
+    "description": "",
+    "id": "ebecaae9-9bc8-4df9-a981-6afb7a2a280f",
+    "created_at": "2026-05-19 17:48:49"
+  },
+  {
+    "name": "B",
+    "category": "编程语言",
+    "level": 5,
+    "hours_spent": 100.0,
+    "description": "",
+    "id": "a9e62279-3cb3-45fb-b368-e4a62b80f50a",
+    "created_at": "2026-05-19 17:48:49"
+  },
+  {
+    "name": "Python",
+    "category": "编程语言",
+    "level": 4,
+    "hours_spent": 200.0,
+    "description": "",
+    "id": "d944ce46-1717-442c-9c82-7c339a2b80df",
+    "created_at": "2026-05-19 17:48:49"
+  },
+  {
+    "name": "Vim",
+    "category": "工具",
+    "level": 3,
+    "hours_spent": 50.0,
+    "description": "",
+    "id": "2bdfc301-3d88-4d46-a1f2-5f6771e90b74",
+    "created_at": "2026-05-19 17:48:49"
+  },
+  {
+    "name": "Python编程",
+    "category": "编程语言",
+    "level": 4,
+    "hours_spent": 200.0,
+    "description": "后端开发",
+    "id": "38834a46-b555-432d-9c88-4062976d9913",
+    "created_at": "2026-05-19 17:48:49"
+  },
+  {
+    "name": "Excel",
+    "category": "工具",
+    "level": 3,
+    "hours_spent": 30.0,
+    "description": "办公软件",
+    "id": "b02a5e5e-ac5e-4bff-a9e4-9e841d210364",
+    "created_at": "2026-05-19 17:48:49"
+  },
+  {
+    "name": "A",
+    "category": "编程语言",
+    "level": 4,
+    "hours_spent": 100.0,
+    "description": "",
+    "id": "f8431ccd-40a9-4195-a890-ee581040ee8b",
+    "created_at": "2026-05-19 17:48:49"
+  },
+  {
+    "name": "B",
+    "category": "编程语言",
+    "level": 2,
+    "hours_spent": 50.0,
+    "description": "",
+    "id": "7733f282-28fc-4333-b849-d6e99fefe50c",
+    "created_at": "2026-05-19 17:48:49"
+  },
+  {
+    "name": "C",
+    "category": "工具",
+    "level": 3,
+    "hours_spent": 30.0,
+    "description": "",
+    "id": "08388d80-c41a-485f-b4ee-aebe2235ee26",
+    "created_at": "2026-05-19 17:48:49"
+  },
+  {
+    "name": "Python",
+    "category": "编程语言",
+    "level": 5,
+    "hours_spent": 150.0,
+    "description": "",
+    "id": "d2d4b3f9-7f39-4e4c-af92-78d55463c5ab",
+    "created_at": "2026-05-19 17:48:49",
+    "updated_at": "2026-05-19 17:48:49"
+  },
+  {
+    "name": "Python",
+    "category": "编程语言",
+    "level": 3,
+    "hours_spent": 100.0,
+    "description": "",
+    "id": "218c8410-92c7-4677-aeb2-e10ecebb1ca3",
+    "created_at": "2026-05-19 17:48:49"
+  },
+  {
+    "name": "Python",
+    "category": "编程语言",
+    "level": 4,
+    "hours_spent": 200.0,
+    "description": "",
+    "id": "075fbbd3-502b-4072-8f36-96d3486cffda",
+    "created_at": "2026-05-19 17:52:28"
+  },
+  {
+    "name": "Mystery",
+    "category": "其他",
+    "level": 3,
+    "hours_spent": 50.0,
+    "description": "",
+    "id": "6ce33fc7-39e8-467a-b096-344a56b6d327",
+    "created_at": "2026-05-19 17:52:28"
+  },
+  {
+    "name": "A",
+    "category": "编程语言",
+    "level": 3,
+    "hours_spent": 10.0,
+    "description": "",
+    "id": "1bace280-0a5a-4aac-968d-9e457b2d83c5",
+    "created_at": "2026-05-19 17:52:28"
+  },
+  {
+    "name": "B",
+    "category": "工具",
+    "level": 3,
+    "hours_spent": 10.0,
+    "description": "",
+    "id": "7e0e57e0-eb78-4496-8ccf-01f2aeccf971",
+    "created_at": "2026-05-19 17:52:28"
+  },
+  {
+    "name": "A",
+    "category": "工具",
+    "level": 2,
+    "hours_spent": 10.0,
+    "description": "",
+    "id": "59bff9c0-eb00-40b3-895a-2f6b08550e55",
+    "created_at": "2026-05-19 17:52:29"
+  },
+  {
+    "name": "B",
+    "category": "编程语言",
+    "level": 5,
+    "hours_spent": 100.0,
+    "description": "",
+    "id": "ae2bac09-54f9-4c16-9cb8-2cdd5c040076",
+    "created_at": "2026-05-19 17:52:29"
+  },
+  {
+    "name": "Python",
+    "category": "编程语言",
+    "level": 4,
+    "hours_spent": 200.0,
+    "description": "",
+    "id": "4dbcbc2c-7158-4bd2-ba73-355902720d34",
+    "created_at": "2026-05-19 17:52:29"
+  },
+  {
+    "name": "Vim",
+    "category": "工具",
+    "level": 3,
+    "hours_spent": 50.0,
+    "description": "",
+    "id": "c75d2493-2008-4208-b276-ba0ef8e0eef5",
+    "created_at": "2026-05-19 17:52:29"
+  },
+  {
+    "name": "Python编程",
+    "category": "编程语言",
+    "level": 4,
+    "hours_spent": 200.0,
+    "description": "后端开发",
+    "id": "5a4c26bd-30fd-4170-8986-4afa82682110",
+    "created_at": "2026-05-19 17:52:29"
+  },
+  {
+    "name": "Excel",
+    "category": "工具",
+    "level": 3,
+    "hours_spent": 30.0,
+    "description": "办公软件",
+    "id": "16a8dfd4-da63-46dc-a137-c9dd57c9ec68",
+    "created_at": "2026-05-19 17:52:29"
+  },
+  {
+    "name": "A",
+    "category": "编程语言",
+    "level": 4,
+    "hours_spent": 100.0,
+    "description": "",
+    "id": "d76793b1-97b7-4675-b018-de98cd0b9b15",
+    "created_at": "2026-05-19 17:52:29"
+  },
+  {
+    "name": "B",
+    "category": "编程语言",
+    "level": 2,
+    "hours_spent": 50.0,
+    "description": "",
+    "id": "6048c4f7-d5e5-4495-813c-1e4525da6fcc",
+    "created_at": "2026-05-19 17:52:29"
+  },
+  {
+    "name": "C",
+    "category": "工具",
+    "level": 3,
+    "hours_spent": 30.0,
+    "description": "",
+    "id": "350ae2dc-5a71-4b27-929a-42b3debf6c7f",
+    "created_at": "2026-05-19 17:52:29"
+  },
+  {
+    "name": "Python",
+    "category": "编程语言",
+    "level": 5,
+    "hours_spent": 150.0,
+    "description": "",
+    "id": "a669b078-4bc2-4099-b264-c7af021818ea",
+    "created_at": "2026-05-19 17:52:29",
+    "updated_at": "2026-05-19 17:52:29"
+  },
+  {
+    "name": "Python",
+    "category": "编程语言",
+    "level": 3,
+    "hours_spent": 100.0,
+    "description": "",
+    "id": "3b49a7c6-7715-49ef-86ae-14033b2d098e",
+    "created_at": "2026-05-19 17:52:29"
+  },
+  {
+    "name": "Python",
+    "category": "编程语言",
+    "level": 4,
+    "hours_spent": 200.0,
+    "description": "",
+    "id": "ccc3f561-f2fc-4a17-ad41-3e5fdb1353ab",
+    "created_at": "2026-05-19 17:52:39"
+  },
+  {
+    "name": "Mystery",
+    "category": "其他",
+    "level": 3,
+    "hours_spent": 50.0,
+    "description": "",
+    "id": "af1a2240-5892-451b-8905-a8ef14f338ac",
+    "created_at": "2026-05-19 17:52:39"
+  },
+  {
+    "name": "A",
+    "category": "编程语言",
+    "level": 3,
+    "hours_spent": 10.0,
+    "description": "",
+    "id": "09bfeedc-6bcc-4a61-b54c-f239cb0b6b6e",
+    "created_at": "2026-05-19 17:52:39"
+  },
+  {
+    "name": "B",
+    "category": "工具",
+    "level": 3,
+    "hours_spent": 10.0,
+    "description": "",
+    "id": "c670ca0a-2a5d-4176-83a4-e99b42fb9c16",
+    "created_at": "2026-05-19 17:52:39"
+  },
+  {
+    "name": "A",
+    "category": "工具",
+    "level": 2,
+    "hours_spent": 10.0,
+    "description": "",
+    "id": "eabe73ce-0bbd-4521-a61a-c2d032841a70",
+    "created_at": "2026-05-19 17:52:39"
+  },
+  {
+    "name": "B",
+    "category": "编程语言",
+    "level": 5,
+    "hours_spent": 100.0,
+    "description": "",
+    "id": "38db7602-4e6f-4aba-8770-1a68160702aa",
+    "created_at": "2026-05-19 17:52:39"
+  },
+  {
+    "name": "Python",
+    "category": "编程语言",
+    "level": 4,
+    "hours_spent": 200.0,
+    "description": "",
+    "id": "4e76c75b-b34d-4248-aeab-d880d27c624b",
+    "created_at": "2026-05-19 17:52:39"
+  },
+  {
+    "name": "Vim",
+    "category": "工具",
+    "level": 3,
+    "hours_spent": 50.0,
+    "description": "",
+    "id": "f8570f58-77f2-4f4a-85af-333703ceffba",
+    "created_at": "2026-05-19 17:52:39"
+  },
+  {
+    "name": "Python编程",
+    "category": "编程语言",
+    "level": 4,
+    "hours_spent": 200.0,
+    "description": "后端开发",
+    "id": "c34c86ad-ecec-47dd-b62e-5e9dd398162f",
+    "created_at": "2026-05-19 17:52:39"
+  },
+  {
+    "name": "Excel",
+    "category": "工具",
+    "level": 3,
+    "hours_spent": 30.0,
+    "description": "办公软件",
+    "id": "b6a8b22f-641f-45fc-bbdc-2ee20e793c36",
+    "created_at": "2026-05-19 17:52:39"
+  },
+  {
+    "name": "A",
+    "category": "编程语言",
+    "level": 4,
+    "hours_spent": 100.0,
+    "description": "",
+    "id": "7e03ae83-caa1-4929-bd6a-9043d61c6f1e",
+    "created_at": "2026-05-19 17:52:39"
+  },
+  {
+    "name": "B",
+    "category": "编程语言",
+    "level": 2,
+    "hours_spent": 50.0,
+    "description": "",
+    "id": "2bf8c65b-ca84-4c5e-9de9-8fb61e431143",
+    "created_at": "2026-05-19 17:52:39"
+  },
+  {
+    "name": "C",
+    "category": "工具",
+    "level": 3,
+    "hours_spent": 30.0,
+    "description": "",
+    "id": "5860a162-ccf9-4851-9b6a-ed0936b58b24",
+    "created_at": "2026-05-19 17:52:39"
+  },
+  {
+    "name": "Python",
+    "category": "编程语言",
+    "level": 5,
+    "hours_spent": 150.0,
+    "description": "",
+    "id": "cf0c924e-0ed3-4929-80ee-bc9691453838",
+    "created_at": "2026-05-19 17:52:39",
+    "updated_at": "2026-05-19 17:52:39"
+  },
+  {
+    "name": "Python",
+    "category": "编程语言",
+    "level": 3,
+    "hours_spent": 100.0,
+    "description": "",
+    "id": "37bcaece-e685-4209-9a51-2068d11a1a42",
+    "created_at": "2026-05-19 17:52:39"
+  },
+  {
+    "name": "Python",
+    "category": "编程语言",
+    "level": 4,
+    "hours_spent": 200.0,
+    "description": "",
+    "id": "d08aaec1-0f33-4544-8e75-f413a1e6bfb4",
+    "created_at": "2026-05-19 17:53:58"
+  },
+  {
+    "name": "Mystery",
+    "category": "其他",
+    "level": 3,
+    "hours_spent": 50.0,
+    "description": "",
+    "id": "b94d9012-ddb9-4c8a-a132-a0fd7b8d337f",
+    "created_at": "2026-05-19 17:53:58"
+  },
+  {
+    "name": "A",
+    "category": "编程语言",
+    "level": 3,
+    "hours_spent": 10.0,
+    "description": "",
+    "id": "cf7f2d27-9997-4a24-bc0c-e4d25bb4abd3",
+    "created_at": "2026-05-19 17:53:58"
+  },
+  {
+    "name": "B",
+    "category": "工具",
+    "level": 3,
+    "hours_spent": 10.0,
+    "description": "",
+    "id": "5addff38-fc52-443b-a9df-a1f9e41377bb",
+    "created_at": "2026-05-19 17:53:58"
+  },
+  {
+    "name": "A",
+    "category": "工具",
+    "level": 2,
+    "hours_spent": 10.0,
+    "description": "",
+    "id": "0cefadc1-466b-43a1-9433-dcff3321ee50",
+    "created_at": "2026-05-19 17:53:58"
+  },
+  {
+    "name": "B",
+    "category": "编程语言",
+    "level": 5,
+    "hours_spent": 100.0,
+    "description": "",
+    "id": "8faf4736-d3d5-4491-96b0-b2addf3e10d8",
+    "created_at": "2026-05-19 17:53:58"
+  },
+  {
+    "name": "Python",
+    "category": "编程语言",
+    "level": 4,
+    "hours_spent": 200.0,
+    "description": "",
+    "id": "71b32bfe-1145-49ff-a7fe-4a2aa3d5b998",
+    "created_at": "2026-05-19 17:53:58"
+  },
+  {
+    "name": "Vim",
+    "category": "工具",
+    "level": 3,
+    "hours_spent": 50.0,
+    "description": "",
+    "id": "2ff09d3b-adbb-4f90-ab1a-4926b6ad70a5",
+    "created_at": "2026-05-19 17:53:58"
+  },
+  {
+    "name": "Python编程",
+    "category": "编程语言",
+    "level": 4,
+    "hours_spent": 200.0,
+    "description": "后端开发",
+    "id": "ba18e45a-abe6-4ffe-a3f8-bb17727aab19",
+    "created_at": "2026-05-19 17:53:58"
+  },
+  {
+    "name": "Excel",
+    "category": "工具",
+    "level": 3,
+    "hours_spent": 30.0,
+    "description": "办公软件",
+    "id": "7f531ef6-d957-45b7-b014-06d80f39aefd",
+    "created_at": "2026-05-19 17:53:58"
+  },
+  {
+    "name": "A",
+    "category": "编程语言",
+    "level": 4,
+    "hours_spent": 100.0,
+    "description": "",
+    "id": "fffbecff-e5c2-4b26-9876-f1be203255b8",
+    "created_at": "2026-05-19 17:53:58"
+  },
+  {
+    "name": "B",
+    "category": "编程语言",
+    "level": 2,
+    "hours_spent": 50.0,
+    "description": "",
+    "id": "ec5b3685-7a1f-417c-a0d8-b0309da8c32c",
+    "created_at": "2026-05-19 17:53:58"
+  },
+  {
+    "name": "C",
+    "category": "工具",
+    "level": 3,
+    "hours_spent": 30.0,
+    "description": "",
+    "id": "4368a2c9-42b8-4e0c-857a-f8461fdddc20",
+    "created_at": "2026-05-19 17:53:58"
+  },
+  {
+    "name": "Python",
+    "category": "编程语言",
+    "level": 5,
+    "hours_spent": 150.0,
+    "description": "",
+    "id": "1b39c86f-5e8c-4a09-86a3-6d08fcdd317e",
+    "created_at": "2026-05-19 17:53:58",
+    "updated_at": "2026-05-19 17:53:58"
+  },
+  {
+    "name": "Python",
+    "category": "编程语言",
+    "level": 3,
+    "hours_spent": 100.0,
+    "description": "",
+    "id": "356fbcba-51a9-424a-9f90-cf0bf3016582",
+    "created_at": "2026-05-19 17:53:58"
   }
 ]

@@ -3,6 +3,7 @@
 import tkinter as tk
 
 from .NavFrame import NavFrame
+from .DashboardPage import DashboardPage
 from .ProfilePage import ProfilePage
 from .SkillPage import SkillPage
 from .StatusPage import StatusPage
@@ -62,13 +63,9 @@ class App:
         self.pages["password"] = PasswordPage(self.content, self.set_status)
         self.pages["backup"] = BackupPage(self.content, self.set_status)
 
-        placeholder = tk.Frame(self.content, bg="#ffffff")
-        label = tk.Label(
-            placeholder, text="「dashboard」模块开发中...",
-            font=("Microsoft YaHei", 14), fg="#999999", bg="#ffffff"
+        self.pages["dashboard"] = DashboardPage(
+            self.content, self.set_status, self._switch_page
         )
-        label.pack(expand=True)
-        self.pages["dashboard"] = placeholder
 
     def _switch_page(self, page_name: str) -> None:
         """切换内容区显示的页面。"""
@@ -77,6 +74,8 @@ class App:
         page = self.pages.get(page_name)
         if page:
             page.pack(fill=tk.BOTH, expand=True)
+            if hasattr(page, "refresh"):
+                page.refresh()
 
     def set_status(self, message: str) -> None:
         """更新状态栏消息。"""

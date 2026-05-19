@@ -1,0 +1,749 @@
+{
+  "profile": {
+    "name": "Test",
+    "created_at": "2026-01-01"
+  },
+  "skills": [],
+  "status": [
+    {
+      "date": "2026-05-18",
+      "mood": 3,
+      "energy": 3,
+      "focus": 3,
+      "weight": 0.0,
+      "sleep_hours": 0.0,
+      "note": "",
+      "id": "7034ae1c-d3b6-4293-8133-e17800fe400a",
+      "created_at": "2026-05-19 16:48:22",
+      "updated_at": "2026-05-19 17:48:49"
+    },
+    {
+      "date": "2026-05-17",
+      "mood": 3,
+      "energy": 3,
+      "focus": 3,
+      "weight": 0.0,
+      "sleep_hours": 0.0,
+      "note": "",
+      "id": "c35ba951-0c7e-4645-9bff-e6f3d7b00dff",
+      "created_at": "2026-05-19 16:48:22",
+      "updated_at": "2026-05-19 17:48:49"
+    },
+    {
+      "date": "2026-05-15",
+      "mood": 3,
+      "energy": 3,
+      "focus": 3,
+      "weight": 0.0,
+      "sleep_hours": 0.0,
+      "note": "",
+      "id": "e0798928-aaac-4cdc-8a17-857c5de3a131",
+      "created_at": "2026-05-19 17:47:07",
+      "updated_at": "2026-05-19 17:48:49"
+    },
+    {
+      "date": "2026-05-01",
+      "mood": 2,
+      "energy": 3,
+      "focus": 3,
+      "weight": 0.0,
+      "sleep_hours": 0.0,
+      "note": "",
+      "id": "0b25024e-399d-4b04-a2ab-b9957064648d",
+      "created_at": "2026-05-19 17:47:07",
+      "updated_at": "2026-05-19 17:48:49"
+    },
+    {
+      "date": "2026-05-10",
+      "mood": 2,
+      "energy": 2,
+      "focus": 2,
+      "weight": 0.0,
+      "sleep_hours": 6.0,
+      "note": "",
+      "id": "4bf45e30-87a6-403d-b988-7577ede39809",
+      "created_at": "2026-05-19 17:47:07",
+      "updated_at": "2026-05-19 17:48:49"
+    },
+    {
+      "date": "2026-05-20",
+      "mood": 4,
+      "energy": 3,
+      "focus": 3,
+      "weight": 0.0,
+      "sleep_hours": 0.0,
+      "note": "",
+      "id": "479770f0-5487-4574-ba35-33b8960209ba",
+      "created_at": "2026-05-19 17:47:07",
+      "updated_at": "2026-05-19 17:48:49"
+    },
+    {
+      "date": "2026-05-16",
+      "mood": 3,
+      "energy": 3,
+      "focus": 3,
+      "weight": 0.0,
+      "sleep_hours": 0.0,
+      "note": "",
+      "id": "15542ca8-bddb-4add-8485-cbd6e6f3872e",
+      "created_at": "2026-05-19 17:47:07",
+      "updated_at": "2026-05-19 17:48:49"
+    },
+    {
+      "date": "2026-05-14",
+      "mood": 3,
+      "energy": 3,
+      "focus": 3,
+      "weight": 0.0,
+      "sleep_hours": 0.0,
+      "note": "",
+      "id": "5885e5af-8ee8-451d-a13e-3814bab9ca7e",
+      "created_at": "2026-05-19 17:47:07",
+      "updated_at": "2026-05-19 17:48:49"
+    },
+    {
+      "date": "2026-05-13",
+      "mood": 3,
+      "energy": 3,
+      "focus": 3,
+      "weight": 0.0,
+      "sleep_hours": 0.0,
+      "note": "",
+      "id": "ab96c047-d2b0-4844-94d1-f659610c41fc",
+      "created_at": "2026-05-19 17:47:07",
+      "updated_at": "2026-05-19 17:48:49"
+    },
+    {
+      "date": "2026-05-12",
+      "mood": 3,
+      "energy": 3,
+      "focus": 3,
+      "weight": 0.0,
+      "sleep_hours": 0.0,
+      "note": "",
+      "id": "71fbb105-3435-41f5-9911-3977eb82ad2d",
+      "created_at": "2026-05-19 17:47:07",
+      "updated_at": "2026-05-19 17:48:49"
+    },
+    {
+      "date": "2026-05-11",
+      "mood": 4,
+      "energy": 4,
+      "focus": 4,
+      "weight": 0.0,
+      "sleep_hours": 8.0,
+      "note": "",
+      "id": "29cfb216-680f-4e0f-b6e0-0b288da6a550",
+      "created_at": "2026-05-19 17:47:07",
+      "updated_at": "2026-05-19 17:48:49"
+    },
+    {
+      "date": "2026-05-19",
+      "mood": 3,
+      "energy": 3,
+      "focus": 3,
+      "weight": 0.0,
+      "sleep_hours": 0.0,
+      "note": "",
+      "id": "a02a25ef-26a1-468c-ad79-2896e8eba004",
+      "created_at": "2026-05-19 17:48:49",
+      "updated_at": "2026-05-19 17:48:50"
+    }
+  ],
+  "knowledge": [
+    {
+      "item_type": "ebook",
+      "title": "STED-mpi",
+      "category": "技术",
+      "keywords": [
+        "STED",
+        "MPI"
+      ],
+      "content": "",
+      "file_path": "books\\88d47caadc1149f6ac7f1f89133520a7.pdf",
+      "file_size": 4263285,
+      "id": "7a3f1f3c-833b-479b-8261-92ec99a2c3ad",
+      "created_at": "2026-05-19 17:01:31"
+    },
+    {
+      "item_type": "note",
+      "title": "asdf",
+      "category": "工作",
+      "keywords": [],
+      "content": "asdf",
+      "file_path": "",
+      "file_size": 0,
+      "id": "03f38efb-0b09-4fee-8774-c34d2becad20",
+      "created_at": "2026-05-19 17:01:53"
+    },
+    {
+      "item_type": "note",
+      "title": "测试笔记",
+      "category": "技术",
+      "keywords": [
+        "Python",
+        "Tkinter"
+      ],
+      "content": "这是内容",
+      "file_path": "",
+      "file_size": 0,
+      "id": "46123577-70e7-4071-96e1-64c4fafbd8f9",
+      "created_at": "2026-05-19 17:47:07"
+    },
+    {
+      "item_type": "note",
+      "title": "Note",
+      "category": "其他",
+      "keywords": [],
+      "content": "",
+      "file_path": "",
+      "file_size": 0,
+      "id": "cf1681da-2192-4832-a07d-7a56b563dc30",
+      "created_at": "2026-05-19 17:47:07"
+    },
+    {
+      "item_type": "note",
+      "title": "N1",
+      "category": "技术",
+      "keywords": [],
+      "content": "",
+      "file_path": "",
+      "file_size": 0,
+      "id": "1e4777c8-f19f-4eca-8b66-19c80973acab",
+      "created_at": "2026-05-19 17:47:07"
+    },
+    {
+      "item_type": "note",
+      "title": "N2",
+      "category": "生活",
+      "keywords": [],
+      "content": "",
+      "file_path": "",
+      "file_size": 0,
+      "id": "e1b3931c-3eaa-4032-8f22-97ef02fd59e3",
+      "created_at": "2026-05-19 17:47:07"
+    },
+    {
+      "item_type": "note",
+      "title": "N1",
+      "category": "技术",
+      "keywords": [
+        "Python",
+        "GUI"
+      ],
+      "content": "",
+      "file_path": "",
+      "file_size": 0,
+      "id": "78c92da4-a208-4bf0-8053-de2e8e5bc4a3",
+      "created_at": "2026-05-19 17:47:07"
+    },
+    {
+      "item_type": "note",
+      "title": "N2",
+      "category": "生活",
+      "keywords": [
+        "Python"
+      ],
+      "content": "",
+      "file_path": "",
+      "file_size": 0,
+      "id": "fa91179d-b75f-4838-9e2c-d9006486e3e7",
+      "created_at": "2026-05-19 17:47:07"
+    },
+    {
+      "item_type": "note",
+      "title": "N1",
+      "category": "技术",
+      "keywords": [],
+      "content": "",
+      "file_path": "",
+      "file_size": 0,
+      "id": "e1bc88f8-b3b0-4811-875f-2f651801cc3f",
+      "created_at": "2026-05-19 17:47:07"
+    },
+    {
+      "item_type": "note",
+      "title": "N2",
+      "category": "生活",
+      "keywords": [],
+      "content": "",
+      "file_path": "",
+      "file_size": 0,
+      "id": "78dd01da-8a61-4d72-80f2-96a8ca49908e",
+      "created_at": "2026-05-19 17:47:07"
+    },
+    {
+      "item_type": "ebook",
+      "title": "Python指南",
+      "category": "技术",
+      "keywords": [
+        "Python",
+        "编程"
+      ],
+      "content": "",
+      "file_path": "books\\e78e1c59a6df470e9162d40c346a5d8a.pdf",
+      "file_size": 17,
+      "id": "9109268b-ee62-4e0b-a9a0-eb3096bb5f71",
+      "created_at": "2026-05-19 17:47:07"
+    },
+    {
+      "item_type": "ebook",
+      "title": "PythonGuide",
+      "category": "技术",
+      "keywords": [],
+      "content": "",
+      "file_path": "books\\07156a63c60440409cf510cf4de28ade.pdf",
+      "file_size": 17,
+      "id": "946f1950-8949-4b28-9a72-3b33ea228d25",
+      "created_at": "2026-05-19 17:47:07"
+    },
+    {
+      "item_type": "note",
+      "title": "Python笔记",
+      "category": "技术",
+      "keywords": [
+        "Python"
+      ],
+      "content": "学Python",
+      "file_path": "",
+      "file_size": 0,
+      "id": "732477aa-a215-446e-afad-1f3c66df327f",
+      "created_at": "2026-05-19 17:47:07"
+    },
+    {
+      "item_type": "note",
+      "title": "读书笔记",
+      "category": "读书",
+      "keywords": [
+        "阅读"
+      ],
+      "content": "读了一本书",
+      "file_path": "",
+      "file_size": 0,
+      "id": "e066523a-21c2-4f4b-a344-ad4023c030b7",
+      "created_at": "2026-05-19 17:47:07"
+    },
+    {
+      "item_type": "note",
+      "title": "N1",
+      "category": "技术",
+      "keywords": [
+        "Python"
+      ],
+      "content": "",
+      "file_path": "",
+      "file_size": 0,
+      "id": "f766771a-302d-4ce4-a897-cce8ef1e3785",
+      "created_at": "2026-05-19 17:47:07"
+    },
+    {
+      "item_type": "note",
+      "title": "N2",
+      "category": "技术",
+      "keywords": [
+        "Java"
+      ],
+      "content": "",
+      "file_path": "",
+      "file_size": 0,
+      "id": "5f2b48ec-f21f-4b1e-a005-b50dfe4dac92",
+      "created_at": "2026-05-19 17:47:07"
+    },
+    {
+      "item_type": "note",
+      "title": "新标题",
+      "category": "技术",
+      "keywords": [],
+      "content": "新内容",
+      "file_path": "",
+      "file_size": 0,
+      "id": "84ca518a-f86e-435d-96c1-bb18d19ef471",
+      "created_at": "2026-05-19 17:47:07",
+      "updated_at": "2026-05-19 17:47:07"
+    },
+    {
+      "item_type": "note",
+      "title": "标题",
+      "category": "技术",
+      "keywords": [],
+      "content": "",
+      "file_path": "",
+      "file_size": 0,
+      "id": "e9c5b296-51e2-45a2-b4d0-3d20361e0c4c",
+      "created_at": "2026-05-19 17:47:07"
+    },
+    {
+      "item_type": "note",
+      "title": "测试笔记",
+      "category": "技术",
+      "keywords": [
+        "Python",
+        "Tkinter"
+      ],
+      "content": "这是内容",
+      "file_path": "",
+      "file_size": 0,
+      "id": "759b3b54-38f2-40ab-9965-732a66e34c9b",
+      "created_at": "2026-05-19 17:48:48"
+    },
+    {
+      "item_type": "note",
+      "title": "Note",
+      "category": "其他",
+      "keywords": [],
+      "content": "",
+      "file_path": "",
+      "file_size": 0,
+      "id": "ec64629c-e8e8-44ee-8679-5382b4df94f9",
+      "created_at": "2026-05-19 17:48:48"
+    },
+    {
+      "item_type": "note",
+      "title": "N1",
+      "category": "技术",
+      "keywords": [],
+      "content": "",
+      "file_path": "",
+      "file_size": 0,
+      "id": "f7d5d119-b807-4941-9326-7d5f1af77de8",
+      "created_at": "2026-05-19 17:48:49"
+    },
+    {
+      "item_type": "note",
+      "title": "N2",
+      "category": "生活",
+      "keywords": [],
+      "content": "",
+      "file_path": "",
+      "file_size": 0,
+      "id": "7a086b71-a1fc-4cc7-a7b5-d3616a7d8e20",
+      "created_at": "2026-05-19 17:48:49"
+    },
+    {
+      "item_type": "note",
+      "title": "N1",
+      "category": "技术",
+      "keywords": [
+        "Python",
+        "GUI"
+      ],
+      "content": "",
+      "file_path": "",
+      "file_size": 0,
+      "id": "756b0c4b-668d-4df1-8a7a-42f85cb869d9",
+      "created_at": "2026-05-19 17:48:49"
+    },
+    {
+      "item_type": "note",
+      "title": "N2",
+      "category": "生活",
+      "keywords": [
+        "Python"
+      ],
+      "content": "",
+      "file_path": "",
+      "file_size": 0,
+      "id": "472a4050-3ec7-412d-aaca-7cf0b2e57f4d",
+      "created_at": "2026-05-19 17:48:49"
+    },
+    {
+      "item_type": "note",
+      "title": "N1",
+      "category": "技术",
+      "keywords": [],
+      "content": "",
+      "file_path": "",
+      "file_size": 0,
+      "id": "29872068-f11c-4781-ab38-abffe2df04ad",
+      "created_at": "2026-05-19 17:48:49"
+    },
+    {
+      "item_type": "note",
+      "title": "N2",
+      "category": "生活",
+      "keywords": [],
+      "content": "",
+      "file_path": "",
+      "file_size": 0,
+      "id": "78900088-63b0-4133-848e-10eabb5ddcd8",
+      "created_at": "2026-05-19 17:48:49"
+    },
+    {
+      "item_type": "ebook",
+      "title": "Python指南",
+      "category": "技术",
+      "keywords": [
+        "Python",
+        "编程"
+      ],
+      "content": "",
+      "file_path": "books\\83c1f18a2b3c4aaabe6a0aee3fec8249.pdf",
+      "file_size": 17,
+      "id": "3d4cad0a-d9ad-4f0f-90c5-ae348cebbb67",
+      "created_at": "2026-05-19 17:48:49"
+    },
+    {
+      "item_type": "ebook",
+      "title": "PythonGuide",
+      "category": "技术",
+      "keywords": [],
+      "content": "",
+      "file_path": "books\\1813dca0a43745a6b148f1f05c20dafb.pdf",
+      "file_size": 17,
+      "id": "88077c6e-fc41-4db6-91f0-9b6d5a8dab36",
+      "created_at": "2026-05-19 17:48:49"
+    },
+    {
+      "item_type": "note",
+      "title": "Python笔记",
+      "category": "技术",
+      "keywords": [
+        "Python"
+      ],
+      "content": "学Python",
+      "file_path": "",
+      "file_size": 0,
+      "id": "be781282-6b70-47f8-ae98-5fc00e8401c1",
+      "created_at": "2026-05-19 17:48:49"
+    },
+    {
+      "item_type": "note",
+      "title": "读书笔记",
+      "category": "读书",
+      "keywords": [
+        "阅读"
+      ],
+      "content": "读了一本书",
+      "file_path": "",
+      "file_size": 0,
+      "id": "312845d4-e804-4ff7-852b-f4eb47963327",
+      "created_at": "2026-05-19 17:48:49"
+    },
+    {
+      "item_type": "note",
+      "title": "N1",
+      "category": "技术",
+      "keywords": [
+        "Python"
+      ],
+      "content": "",
+      "file_path": "",
+      "file_size": 0,
+      "id": "e1601162-9c2a-421e-9a00-16996acdda65",
+      "created_at": "2026-05-19 17:48:49"
+    },
+    {
+      "item_type": "note",
+      "title": "N2",
+      "category": "技术",
+      "keywords": [
+        "Java"
+      ],
+      "content": "",
+      "file_path": "",
+      "file_size": 0,
+      "id": "af6496aa-bc8c-4d5b-90da-c28ed8dbda9a",
+      "created_at": "2026-05-19 17:48:49"
+    },
+    {
+      "item_type": "note",
+      "title": "新标题",
+      "category": "技术",
+      "keywords": [],
+      "content": "新内容",
+      "file_path": "",
+      "file_size": 0,
+      "id": "f72784da-509d-44ca-93b0-88aef7cd1c87",
+      "created_at": "2026-05-19 17:48:49",
+      "updated_at": "2026-05-19 17:48:49"
+    },
+    {
+      "item_type": "note",
+      "title": "标题",
+      "category": "技术",
+      "keywords": [],
+      "content": "",
+      "file_path": "",
+      "file_size": 0,
+      "id": "a8aab8c7-a0ad-4b4c-9002-1e4528f20e99",
+      "created_at": "2026-05-19 17:48:49"
+    }
+  ],
+  "passwords": [
+    {
+      "platform": "Google",
+      "url": "https://google.com",
+      "username": "user2",
+      "password": "cGFzczQ1Ng==",
+      "note": "",
+      "id": "4e1ed3db-7f53-4203-9046-6b23e90c0d21",
+      "created_at": "2026-05-19 17:08:56"
+    },
+    {
+      "platform": "GitHub",
+      "url": "https://github.com",
+      "username": "user",
+      "password": "c2VjcmV0MTIz",
+      "note": "",
+      "id": "08c797f1-9b23-4bbb-921b-8706613bec27",
+      "created_at": "2026-05-19 17:47:07"
+    },
+    {
+      "platform": "B",
+      "url": "",
+      "username": "",
+      "password": "cA==",
+      "note": "",
+      "id": "fdf9989b-2176-4983-bcb4-00f466a9c171",
+      "created_at": "2026-05-19 17:47:07"
+    },
+    {
+      "platform": "A",
+      "url": "",
+      "username": "",
+      "password": "cA==",
+      "note": "",
+      "id": "34a227b0-fc6d-4337-b857-bf5c389640c8",
+      "created_at": "2026-05-19 17:47:07"
+    },
+    {
+      "platform": "Site",
+      "url": "",
+      "username": "user",
+      "password": "cGxhaW4xMjM=",
+      "note": "",
+      "id": "cf40631f-11b1-4df5-86db-f0f6e8ac7923",
+      "created_at": "2026-05-19 17:47:07"
+    },
+    {
+      "platform": "GitHub",
+      "url": "https://github.com",
+      "username": "octocat",
+      "password": "cGFzcw==",
+      "note": "",
+      "id": "659fbe0f-27f1-44e1-8a53-04af888d06a2",
+      "created_at": "2026-05-19 17:47:07"
+    },
+    {
+      "platform": "Gmail",
+      "url": "https://mail.google.com",
+      "username": "user",
+      "password": "cGFzcw==",
+      "note": "",
+      "id": "9ad58137-57b3-4901-a9c7-0573588571ae",
+      "created_at": "2026-05-19 17:47:07"
+    },
+    {
+      "platform": "New",
+      "url": "",
+      "username": "user",
+      "password": "bmV3cGFzcw==",
+      "note": "",
+      "id": "613b4a39-316b-4edd-b6c9-6bc9c3d238e8",
+      "created_at": "2026-05-19 17:47:07",
+      "updated_at": "2026-05-19 17:47:07"
+    },
+    {
+      "platform": "New",
+      "url": "",
+      "username": "user",
+      "password": "b3JpZ3Bhc3M=",
+      "note": "",
+      "id": "71f088bd-c255-4e83-8b50-ca487c9dd597",
+      "created_at": "2026-05-19 17:47:07",
+      "updated_at": "2026-05-19 17:47:07"
+    },
+    {
+      "platform": "Site",
+      "url": "",
+      "username": "user",
+      "password": "cGFzcw==",
+      "note": "",
+      "id": "97b26764-3468-41ed-a4be-4bd1bfbae3c3",
+      "created_at": "2026-05-19 17:47:07"
+    },
+    {
+      "platform": "GitHub",
+      "url": "https://github.com",
+      "username": "user",
+      "password": "c2VjcmV0MTIz",
+      "note": "",
+      "id": "ff2f3162-731d-4973-a338-170ed81df2e5",
+      "created_at": "2026-05-19 17:48:49"
+    },
+    {
+      "platform": "B",
+      "url": "",
+      "username": "",
+      "password": "cA==",
+      "note": "",
+      "id": "86e7dadc-210a-422b-a642-228141aff56e",
+      "created_at": "2026-05-19 17:48:49"
+    },
+    {
+      "platform": "A",
+      "url": "",
+      "username": "",
+      "password": "cA==",
+      "note": "",
+      "id": "bdb7d4a7-ebc6-40d8-a4fc-695853da86ad",
+      "created_at": "2026-05-19 17:48:49"
+    },
+    {
+      "platform": "Site",
+      "url": "",
+      "username": "user",
+      "password": "cGxhaW4xMjM=",
+      "note": "",
+      "id": "94d38b9f-72ae-4d13-8f03-aa172072cfac",
+      "created_at": "2026-05-19 17:48:49"
+    },
+    {
+      "platform": "GitHub",
+      "url": "https://github.com",
+      "username": "octocat",
+      "password": "cGFzcw==",
+      "note": "",
+      "id": "406a728e-bf1b-443c-bf10-60520d895913",
+      "created_at": "2026-05-19 17:48:49"
+    },
+    {
+      "platform": "Gmail",
+      "url": "https://mail.google.com",
+      "username": "user",
+      "password": "cGFzcw==",
+      "note": "",
+      "id": "3a6e0d2b-c7b3-48d0-8568-9153e54a1b15",
+      "created_at": "2026-05-19 17:48:49"
+    },
+    {
+      "platform": "New",
+      "url": "",
+      "username": "user",
+      "password": "bmV3cGFzcw==",
+      "note": "",
+      "id": "f1844c75-76ea-4c6c-a188-5f5ec07bd54d",
+      "created_at": "2026-05-19 17:48:49",
+      "updated_at": "2026-05-19 17:48:49"
+    },
+    {
+      "platform": "New",
+      "url": "",
+      "username": "user",
+      "password": "b3JpZ3Bhc3M=",
+      "note": "",
+      "id": "88ea619e-d5b2-47dd-a1cd-bd8c0b79b159",
+      "created_at": "2026-05-19 17:48:49",
+      "updated_at": "2026-05-19 17:48:49"
+    },
+    {
+      "platform": "Site",
+      "url": "",
+      "username": "user",
+      "password": "cGFzcw==",
+      "note": "",
+      "id": "fc11b921-e1ad-4cfa-8fe7-705101d11ebb",
+      "created_at": "2026-05-19 17:48:49"
+    }
+  ]
+}

@@ -6,7 +6,7 @@ import subprocess
 import uuid
 import sys
 
-from Core.Config import KNOWLEDGE_PATH, BOOKS_DIR
+import Core.Config as Config
 from Core.Exceptions import ValidationError
 from Core.Storage import JSONFileStorage
 from Models.Knowledge import KnowledgeItem
@@ -18,8 +18,8 @@ class KnowledgeManager:
     VALID_CATEGORIES = ["技术", "生活", "读书", "工作", "其他"]
 
     def __init__(self):
-        self.storage = JSONFileStorage(KNOWLEDGE_PATH)
-        os.makedirs(BOOKS_DIR, exist_ok=True)
+        self.storage = JSONFileStorage(Config.KNOWLEDGE_PATH)
+        os.makedirs(Config.BOOKS_DIR, exist_ok=True)
 
     # ==== 通用 ====
 
@@ -63,7 +63,7 @@ class KnowledgeManager:
         if record and record.get("item_type") == "ebook" and delete_file:
             file_path = record.get("file_path", "")
             if file_path:
-                abs_path = os.path.join(os.path.dirname(KNOWLEDGE_PATH), file_path)
+                abs_path = os.path.join(os.path.dirname(Config.KNOWLEDGE_PATH), file_path)
                 if os.path.exists(abs_path):
                     os.remove(abs_path)
         return self.storage.delete(item_id)
@@ -153,7 +153,7 @@ class KnowledgeManager:
         # 生成目标文件名 (避免冲突)
         ext = os.path.splitext(source_path)[1] or ".pdf"
         target_name = f"{uuid.uuid4().hex}{ext}"
-        target_path = os.path.join(BOOKS_DIR, target_name)
+        target_path = os.path.join(Config.BOOKS_DIR, target_name)
 
         shutil.copy2(source_path, target_path)
 
@@ -187,12 +187,15 @@ class KnowledgeManager:
         if not file_path:
             raise ValidationError("找不到对应的 PDF 文件")
 
-        if sys.platform == "win32":
-            os.startfile(file_path)
-        elif sys.platform == "darwin":
-            subprocess.run(["open", file_path])
-        else:
-            subprocess.run(["xdg-open", file_path])
+        try:
+            if sys.platform == "win32":
+                os.startfile(file_path)
+            elif sys.platform == "darwin":
+                subprocess.run(["open", file_path], check=True)
+            else:
+                subprocess.run(["xdg-open", file_path], check=True)
+        except OSError as e:
+            raise ValidationError(f"无法打开文件: {e}") from e
 
     def get_ebook_file_path(self, ebook_id: str) -> str | None:
         """获取电子书 PDF 文件的绝对路径。"""
@@ -204,7 +207,7 @@ class KnowledgeManager:
         if not relative_path:
             return None
 
-        abs_path = os.path.join(os.path.dirname(KNOWLEDGE_PATH), relative_path)
+        abs_path = os.path.join(os.path.dirname(Config.KNOWLEDGE_PATH), relative_path)
         if os.path.exists(abs_path):
             return abs_path
         return None

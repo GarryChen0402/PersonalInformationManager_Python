@@ -4,29 +4,29 @@ import json
 import os
 from datetime import datetime
 
-from Core.Config import (BACKUP_DIR, PROFILE_PATH, SKILL_PATH, STATUS_PATH,
-                         KNOWLEDGE_PATH, PASSWORD_PATH)
+import Core.Config as Config
 from Core.Exceptions import BackupError, DataLoadError
 
-MODULE_PATHS = {
-    "profile": PROFILE_PATH,
-    "skills": SKILL_PATH,
-    "status": STATUS_PATH,
-    "knowledge": KNOWLEDGE_PATH,
-    "passwords": PASSWORD_PATH,
-}
+def _module_paths():
+    return {
+        "profile": Config.PROFILE_PATH,
+        "skills": Config.SKILL_PATH,
+        "status": Config.STATUS_PATH,
+        "knowledge": Config.KNOWLEDGE_PATH,
+        "passwords": Config.PASSWORD_PATH,
+    }
 
 
 class BackupManager:
     """备份管理器。"""
 
     def __init__(self):
-        os.makedirs(BACKUP_DIR, exist_ok=True)
+        os.makedirs(Config.BACKUP_DIR, exist_ok=True)
 
     def create_backup(self) -> str:
         """创建全量备份，返回备份文件路径。"""
         backup_data = {}
-        for module_name, path in MODULE_PATHS.items():
+        for module_name, path in _module_paths().items():
             try:
                 if os.path.exists(path):
                     with open(path, "r", encoding="utf-8") as f:
@@ -38,7 +38,7 @@ class BackupManager:
 
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         filename = f"backup_{timestamp}.json"
-        filepath = os.path.join(BACKUP_DIR, filename)
+        filepath = os.path.join(Config.BACKUP_DIR, filename)
 
         try:
             with open(filepath, "w", encoding="utf-8") as f:
@@ -65,19 +65,19 @@ class BackupManager:
             raise BackupError(f"读取备份文件失败: {e}") from e
 
         if modules is None:
-            modules = list(MODULE_PATHS.keys())
+            modules = list(_module_paths().keys())
 
         result = {"success": [], "failed": []}
 
         for module_name in modules:
-            if module_name not in MODULE_PATHS:
+            if module_name not in _module_paths():
                 result["failed"].append(f"{module_name}: 未知模块")
                 continue
             if module_name not in backup_data:
                 result["failed"].append(f"{module_name}: 备份中无此模块数据")
                 continue
 
-            target_path = MODULE_PATHS[module_name]
+            target_path = _module_paths()[module_name]
             try:
                 os.makedirs(os.path.dirname(target_path), exist_ok=True)
                 with open(target_path, "w", encoding="utf-8") as f:
@@ -92,12 +92,12 @@ class BackupManager:
     def list_backups(self) -> list[dict]:
         """列出所有备份文件，按时间倒序。"""
         backups = []
-        if not os.path.exists(BACKUP_DIR):
+        if not os.path.exists(Config.BACKUP_DIR):
             return backups
 
-        for filename in os.listdir(BACKUP_DIR):
+        for filename in os.listdir(Config.BACKUP_DIR):
             if filename.startswith("backup_") and filename.endswith(".json"):
-                filepath = os.path.join(BACKUP_DIR, filename)
+                filepath = os.path.join(Config.BACKUP_DIR, filename)
                 stat = os.stat(filepath)
                 backups.append({
                     "path": filepath,

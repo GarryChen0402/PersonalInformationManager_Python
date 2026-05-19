@@ -23,5 +23,789 @@
     "file_size": 0,
     "id": "03f38efb-0b09-4fee-8774-c34d2becad20",
     "created_at": "2026-05-19 17:01:53"
+  },
+  {
+    "item_type": "note",
+    "title": "测试笔记",
+    "category": "技术",
+    "keywords": [
+      "Python",
+      "Tkinter"
+    ],
+    "content": "这是内容",
+    "file_path": "",
+    "file_size": 0,
+    "id": "46123577-70e7-4071-96e1-64c4fafbd8f9",
+    "created_at": "2026-05-19 17:47:07"
+  },
+  {
+    "item_type": "note",
+    "title": "Note",
+    "category": "其他",
+    "keywords": [],
+    "content": "",
+    "file_path": "",
+    "file_size": 0,
+    "id": "cf1681da-2192-4832-a07d-7a56b563dc30",
+    "created_at": "2026-05-19 17:47:07"
+  },
+  {
+    "item_type": "note",
+    "title": "N1",
+    "category": "技术",
+    "keywords": [],
+    "content": "",
+    "file_path": "",
+    "file_size": 0,
+    "id": "1e4777c8-f19f-4eca-8b66-19c80973acab",
+    "created_at": "2026-05-19 17:47:07"
+  },
+  {
+    "item_type": "note",
+    "title": "N2",
+    "category": "生活",
+    "keywords": [],
+    "content": "",
+    "file_path": "",
+    "file_size": 0,
+    "id": "e1b3931c-3eaa-4032-8f22-97ef02fd59e3",
+    "created_at": "2026-05-19 17:47:07"
+  },
+  {
+    "item_type": "note",
+    "title": "N1",
+    "category": "技术",
+    "keywords": [
+      "Python",
+      "GUI"
+    ],
+    "content": "",
+    "file_path": "",
+    "file_size": 0,
+    "id": "78c92da4-a208-4bf0-8053-de2e8e5bc4a3",
+    "created_at": "2026-05-19 17:47:07"
+  },
+  {
+    "item_type": "note",
+    "title": "N2",
+    "category": "生活",
+    "keywords": [
+      "Python"
+    ],
+    "content": "",
+    "file_path": "",
+    "file_size": 0,
+    "id": "fa91179d-b75f-4838-9e2c-d9006486e3e7",
+    "created_at": "2026-05-19 17:47:07"
+  },
+  {
+    "item_type": "note",
+    "title": "N1",
+    "category": "技术",
+    "keywords": [],
+    "content": "",
+    "file_path": "",
+    "file_size": 0,
+    "id": "e1bc88f8-b3b0-4811-875f-2f651801cc3f",
+    "created_at": "2026-05-19 17:47:07"
+  },
+  {
+    "item_type": "note",
+    "title": "N2",
+    "category": "生活",
+    "keywords": [],
+    "content": "",
+    "file_path": "",
+    "file_size": 0,
+    "id": "78dd01da-8a61-4d72-80f2-96a8ca49908e",
+    "created_at": "2026-05-19 17:47:07"
+  },
+  {
+    "item_type": "ebook",
+    "title": "Python指南",
+    "category": "技术",
+    "keywords": [
+      "Python",
+      "编程"
+    ],
+    "content": "",
+    "file_path": "books\\e78e1c59a6df470e9162d40c346a5d8a.pdf",
+    "file_size": 17,
+    "id": "9109268b-ee62-4e0b-a9a0-eb3096bb5f71",
+    "created_at": "2026-05-19 17:47:07"
+  },
+  {
+    "item_type": "ebook",
+    "title": "PythonGuide",
+    "category": "技术",
+    "keywords": [],
+    "content": "",
+    "file_path": "books\\07156a63c60440409cf510cf4de28ade.pdf",
+    "file_size": 17,
+    "id": "946f1950-8949-4b28-9a72-3b33ea228d25",
+    "created_at": "2026-05-19 17:47:07"
+  },
+  {
+    "item_type": "note",
+    "title": "Python笔记",
+    "category": "技术",
+    "keywords": [
+      "Python"
+    ],
+    "content": "学Python",
+    "file_path": "",
+    "file_size": 0,
+    "id": "732477aa-a215-446e-afad-1f3c66df327f",
+    "created_at": "2026-05-19 17:47:07"
+  },
+  {
+    "item_type": "note",
+    "title": "读书笔记",
+    "category": "读书",
+    "keywords": [
+      "阅读"
+    ],
+    "content": "读了一本书",
+    "file_path": "",
+    "file_size": 0,
+    "id": "e066523a-21c2-4f4b-a344-ad4023c030b7",
+    "created_at": "2026-05-19 17:47:07"
+  },
+  {
+    "item_type": "note",
+    "title": "N1",
+    "category": "技术",
+    "keywords": [
+      "Python"
+    ],
+    "content": "",
+    "file_path": "",
+    "file_size": 0,
+    "id": "f766771a-302d-4ce4-a897-cce8ef1e3785",
+    "created_at": "2026-05-19 17:47:07"
+  },
+  {
+    "item_type": "note",
+    "title": "N2",
+    "category": "技术",
+    "keywords": [
+      "Java"
+    ],
+    "content": "",
+    "file_path": "",
+    "file_size": 0,
+    "id": "5f2b48ec-f21f-4b1e-a005-b50dfe4dac92",
+    "created_at": "2026-05-19 17:47:07"
+  },
+  {
+    "item_type": "note",
+    "title": "新标题",
+    "category": "技术",
+    "keywords": [],
+    "content": "新内容",
+    "file_path": "",
+    "file_size": 0,
+    "id": "84ca518a-f86e-435d-96c1-bb18d19ef471",
+    "created_at": "2026-05-19 17:47:07",
+    "updated_at": "2026-05-19 17:47:07"
+  },
+  {
+    "item_type": "note",
+    "title": "标题",
+    "category": "技术",
+    "keywords": [],
+    "content": "",
+    "file_path": "",
+    "file_size": 0,
+    "id": "e9c5b296-51e2-45a2-b4d0-3d20361e0c4c",
+    "created_at": "2026-05-19 17:47:07"
+  },
+  {
+    "item_type": "note",
+    "title": "测试笔记",
+    "category": "技术",
+    "keywords": [
+      "Python",
+      "Tkinter"
+    ],
+    "content": "这是内容",
+    "file_path": "",
+    "file_size": 0,
+    "id": "759b3b54-38f2-40ab-9965-732a66e34c9b",
+    "created_at": "2026-05-19 17:48:48"
+  },
+  {
+    "item_type": "note",
+    "title": "Note",
+    "category": "其他",
+    "keywords": [],
+    "content": "",
+    "file_path": "",
+    "file_size": 0,
+    "id": "ec64629c-e8e8-44ee-8679-5382b4df94f9",
+    "created_at": "2026-05-19 17:48:48"
+  },
+  {
+    "item_type": "note",
+    "title": "N1",
+    "category": "技术",
+    "keywords": [],
+    "content": "",
+    "file_path": "",
+    "file_size": 0,
+    "id": "f7d5d119-b807-4941-9326-7d5f1af77de8",
+    "created_at": "2026-05-19 17:48:49"
+  },
+  {
+    "item_type": "note",
+    "title": "N2",
+    "category": "生活",
+    "keywords": [],
+    "content": "",
+    "file_path": "",
+    "file_size": 0,
+    "id": "7a086b71-a1fc-4cc7-a7b5-d3616a7d8e20",
+    "created_at": "2026-05-19 17:48:49"
+  },
+  {
+    "item_type": "note",
+    "title": "N1",
+    "category": "技术",
+    "keywords": [
+      "Python",
+      "GUI"
+    ],
+    "content": "",
+    "file_path": "",
+    "file_size": 0,
+    "id": "756b0c4b-668d-4df1-8a7a-42f85cb869d9",
+    "created_at": "2026-05-19 17:48:49"
+  },
+  {
+    "item_type": "note",
+    "title": "N2",
+    "category": "生活",
+    "keywords": [
+      "Python"
+    ],
+    "content": "",
+    "file_path": "",
+    "file_size": 0,
+    "id": "472a4050-3ec7-412d-aaca-7cf0b2e57f4d",
+    "created_at": "2026-05-19 17:48:49"
+  },
+  {
+    "item_type": "note",
+    "title": "N1",
+    "category": "技术",
+    "keywords": [],
+    "content": "",
+    "file_path": "",
+    "file_size": 0,
+    "id": "29872068-f11c-4781-ab38-abffe2df04ad",
+    "created_at": "2026-05-19 17:48:49"
+  },
+  {
+    "item_type": "note",
+    "title": "N2",
+    "category": "生活",
+    "keywords": [],
+    "content": "",
+    "file_path": "",
+    "file_size": 0,
+    "id": "78900088-63b0-4133-848e-10eabb5ddcd8",
+    "created_at": "2026-05-19 17:48:49"
+  },
+  {
+    "item_type": "ebook",
+    "title": "Python指南",
+    "category": "技术",
+    "keywords": [
+      "Python",
+      "编程"
+    ],
+    "content": "",
+    "file_path": "books\\83c1f18a2b3c4aaabe6a0aee3fec8249.pdf",
+    "file_size": 17,
+    "id": "3d4cad0a-d9ad-4f0f-90c5-ae348cebbb67",
+    "created_at": "2026-05-19 17:48:49"
+  },
+  {
+    "item_type": "ebook",
+    "title": "PythonGuide",
+    "category": "技术",
+    "keywords": [],
+    "content": "",
+    "file_path": "books\\1813dca0a43745a6b148f1f05c20dafb.pdf",
+    "file_size": 17,
+    "id": "88077c6e-fc41-4db6-91f0-9b6d5a8dab36",
+    "created_at": "2026-05-19 17:48:49"
+  },
+  {
+    "item_type": "note",
+    "title": "Python笔记",
+    "category": "技术",
+    "keywords": [
+      "Python"
+    ],
+    "content": "学Python",
+    "file_path": "",
+    "file_size": 0,
+    "id": "be781282-6b70-47f8-ae98-5fc00e8401c1",
+    "created_at": "2026-05-19 17:48:49"
+  },
+  {
+    "item_type": "note",
+    "title": "读书笔记",
+    "category": "读书",
+    "keywords": [
+      "阅读"
+    ],
+    "content": "读了一本书",
+    "file_path": "",
+    "file_size": 0,
+    "id": "312845d4-e804-4ff7-852b-f4eb47963327",
+    "created_at": "2026-05-19 17:48:49"
+  },
+  {
+    "item_type": "note",
+    "title": "N1",
+    "category": "技术",
+    "keywords": [
+      "Python"
+    ],
+    "content": "",
+    "file_path": "",
+    "file_size": 0,
+    "id": "e1601162-9c2a-421e-9a00-16996acdda65",
+    "created_at": "2026-05-19 17:48:49"
+  },
+  {
+    "item_type": "note",
+    "title": "N2",
+    "category": "技术",
+    "keywords": [
+      "Java"
+    ],
+    "content": "",
+    "file_path": "",
+    "file_size": 0,
+    "id": "af6496aa-bc8c-4d5b-90da-c28ed8dbda9a",
+    "created_at": "2026-05-19 17:48:49"
+  },
+  {
+    "item_type": "note",
+    "title": "新标题",
+    "category": "技术",
+    "keywords": [],
+    "content": "新内容",
+    "file_path": "",
+    "file_size": 0,
+    "id": "f72784da-509d-44ca-93b0-88aef7cd1c87",
+    "created_at": "2026-05-19 17:48:49",
+    "updated_at": "2026-05-19 17:48:49"
+  },
+  {
+    "item_type": "note",
+    "title": "标题",
+    "category": "技术",
+    "keywords": [],
+    "content": "",
+    "file_path": "",
+    "file_size": 0,
+    "id": "a8aab8c7-a0ad-4b4c-9002-1e4528f20e99",
+    "created_at": "2026-05-19 17:48:49"
+  },
+  {
+    "item_type": "note",
+    "title": "测试笔记",
+    "category": "技术",
+    "keywords": [
+      "Python",
+      "Tkinter"
+    ],
+    "content": "这是内容",
+    "file_path": "",
+    "file_size": 0,
+    "id": "f3588f16-589a-42b4-9d0d-1a5a1b936fd5",
+    "created_at": "2026-05-19 17:52:28"
+  },
+  {
+    "item_type": "note",
+    "title": "Note",
+    "category": "其他",
+    "keywords": [],
+    "content": "",
+    "file_path": "",
+    "file_size": 0,
+    "id": "067ab743-7173-42f6-86ff-24f841a18403",
+    "created_at": "2026-05-19 17:52:28"
+  },
+  {
+    "item_type": "note",
+    "title": "N1",
+    "category": "技术",
+    "keywords": [],
+    "content": "",
+    "file_path": "",
+    "file_size": 0,
+    "id": "247c6f8f-07e3-4709-ada8-af44abd47082",
+    "created_at": "2026-05-19 17:52:28"
+  },
+  {
+    "item_type": "note",
+    "title": "N2",
+    "category": "生活",
+    "keywords": [],
+    "content": "",
+    "file_path": "",
+    "file_size": 0,
+    "id": "95a27d34-8fb3-45ab-80b7-df50d6cf5637",
+    "created_at": "2026-05-19 17:52:28"
+  },
+  {
+    "item_type": "note",
+    "title": "N1",
+    "category": "技术",
+    "keywords": [
+      "Python",
+      "GUI"
+    ],
+    "content": "",
+    "file_path": "",
+    "file_size": 0,
+    "id": "e32644ca-cc53-4e52-8616-6244a0f0ff14",
+    "created_at": "2026-05-19 17:52:28"
+  },
+  {
+    "item_type": "note",
+    "title": "N2",
+    "category": "生活",
+    "keywords": [
+      "Python"
+    ],
+    "content": "",
+    "file_path": "",
+    "file_size": 0,
+    "id": "932572a2-4f46-423a-8938-d0270f9b0e0a",
+    "created_at": "2026-05-19 17:52:28"
+  },
+  {
+    "item_type": "note",
+    "title": "N1",
+    "category": "技术",
+    "keywords": [],
+    "content": "",
+    "file_path": "",
+    "file_size": 0,
+    "id": "d71d52b0-12d7-4a53-b2ef-0419e21a52fc",
+    "created_at": "2026-05-19 17:52:28"
+  },
+  {
+    "item_type": "note",
+    "title": "N2",
+    "category": "生活",
+    "keywords": [],
+    "content": "",
+    "file_path": "",
+    "file_size": 0,
+    "id": "5ab782d4-8144-481e-a8af-733746ec8973",
+    "created_at": "2026-05-19 17:52:28"
+  },
+  {
+    "item_type": "ebook",
+    "title": "Python指南",
+    "category": "技术",
+    "keywords": [
+      "Python",
+      "编程"
+    ],
+    "content": "",
+    "file_path": "books\\14ebb3c43bc24117968eed437e22462d.pdf",
+    "file_size": 17,
+    "id": "2b9cfba6-d5ea-43da-b076-3e373c3c82df",
+    "created_at": "2026-05-19 17:52:28"
+  },
+  {
+    "item_type": "ebook",
+    "title": "PythonGuide",
+    "category": "技术",
+    "keywords": [],
+    "content": "",
+    "file_path": "books\\afb6723419324f4c9cbe4c00efc93d3b.pdf",
+    "file_size": 17,
+    "id": "ed84fa9c-4054-474e-b905-120a2176327f",
+    "created_at": "2026-05-19 17:52:28"
+  },
+  {
+    "item_type": "note",
+    "title": "Python笔记",
+    "category": "技术",
+    "keywords": [
+      "Python"
+    ],
+    "content": "学Python",
+    "file_path": "",
+    "file_size": 0,
+    "id": "bc05f585-8cca-4543-8a47-d2f2b4578acb",
+    "created_at": "2026-05-19 17:52:28"
+  },
+  {
+    "item_type": "note",
+    "title": "读书笔记",
+    "category": "读书",
+    "keywords": [
+      "阅读"
+    ],
+    "content": "读了一本书",
+    "file_path": "",
+    "file_size": 0,
+    "id": "2f41b1b3-a9b7-4a1e-b078-e15d9040e630",
+    "created_at": "2026-05-19 17:52:28"
+  },
+  {
+    "item_type": "note",
+    "title": "N1",
+    "category": "技术",
+    "keywords": [
+      "Python"
+    ],
+    "content": "",
+    "file_path": "",
+    "file_size": 0,
+    "id": "80e4f6ef-3c99-4b7a-b9c5-1de06295c81e",
+    "created_at": "2026-05-19 17:52:28"
+  },
+  {
+    "item_type": "note",
+    "title": "N2",
+    "category": "技术",
+    "keywords": [
+      "Java"
+    ],
+    "content": "",
+    "file_path": "",
+    "file_size": 0,
+    "id": "4cf30660-a0e3-4597-8d67-197b19c1a16b",
+    "created_at": "2026-05-19 17:52:28"
+  },
+  {
+    "item_type": "note",
+    "title": "新标题",
+    "category": "技术",
+    "keywords": [],
+    "content": "新内容",
+    "file_path": "",
+    "file_size": 0,
+    "id": "df46bfed-daf4-4f2c-88ca-fd2d15f69688",
+    "created_at": "2026-05-19 17:52:28",
+    "updated_at": "2026-05-19 17:52:28"
+  },
+  {
+    "item_type": "note",
+    "title": "标题",
+    "category": "技术",
+    "keywords": [],
+    "content": "",
+    "file_path": "",
+    "file_size": 0,
+    "id": "7977eb3f-534f-47a2-b75d-3cd0df04765b",
+    "created_at": "2026-05-19 17:52:28"
+  },
+  {
+    "item_type": "note",
+    "title": "测试笔记",
+    "category": "技术",
+    "keywords": [
+      "Python",
+      "Tkinter"
+    ],
+    "content": "这是内容",
+    "file_path": "",
+    "file_size": 0,
+    "id": "4c3afb8e-b24b-42c7-abc2-b1d7b7359231",
+    "created_at": "2026-05-19 17:52:38"
+  },
+  {
+    "item_type": "note",
+    "title": "Note",
+    "category": "其他",
+    "keywords": [],
+    "content": "",
+    "file_path": "",
+    "file_size": 0,
+    "id": "ec3ba4f7-39c7-4f0a-9c17-8fff6c2ecf8c",
+    "created_at": "2026-05-19 17:52:38"
+  },
+  {
+    "item_type": "note",
+    "title": "N1",
+    "category": "技术",
+    "keywords": [],
+    "content": "",
+    "file_path": "",
+    "file_size": 0,
+    "id": "0984980e-c14a-442a-87bb-776bcfffd581",
+    "created_at": "2026-05-19 17:52:38"
+  },
+  {
+    "item_type": "note",
+    "title": "N2",
+    "category": "生活",
+    "keywords": [],
+    "content": "",
+    "file_path": "",
+    "file_size": 0,
+    "id": "9ab6ff00-414f-4a8b-b23d-61a89dc7ddff",
+    "created_at": "2026-05-19 17:52:38"
+  },
+  {
+    "item_type": "note",
+    "title": "N1",
+    "category": "技术",
+    "keywords": [
+      "Python",
+      "GUI"
+    ],
+    "content": "",
+    "file_path": "",
+    "file_size": 0,
+    "id": "afe23598-6e84-4d7a-8c6b-3d7d2e7cd9d0",
+    "created_at": "2026-05-19 17:52:38"
+  },
+  {
+    "item_type": "note",
+    "title": "N2",
+    "category": "生活",
+    "keywords": [
+      "Python"
+    ],
+    "content": "",
+    "file_path": "",
+    "file_size": 0,
+    "id": "0667d70d-a863-4f42-af9a-0b59a46af272",
+    "created_at": "2026-05-19 17:52:38"
+  },
+  {
+    "item_type": "note",
+    "title": "N1",
+    "category": "技术",
+    "keywords": [],
+    "content": "",
+    "file_path": "",
+    "file_size": 0,
+    "id": "4d60a5f8-7d99-4295-8727-4136d6f9b01b",
+    "created_at": "2026-05-19 17:52:38"
+  },
+  {
+    "item_type": "note",
+    "title": "N2",
+    "category": "生活",
+    "keywords": [],
+    "content": "",
+    "file_path": "",
+    "file_size": 0,
+    "id": "b2f4363e-e283-48e9-b0de-fe94b3393121",
+    "created_at": "2026-05-19 17:52:38"
+  },
+  {
+    "item_type": "ebook",
+    "title": "Python指南",
+    "category": "技术",
+    "keywords": [
+      "Python",
+      "编程"
+    ],
+    "content": "",
+    "file_path": "books\\e23bcfbf67fc45dcbcc137215b32b9d5.pdf",
+    "file_size": 17,
+    "id": "cf135832-162d-4284-83dc-33c934ed7584",
+    "created_at": "2026-05-19 17:52:38"
+  },
+  {
+    "item_type": "ebook",
+    "title": "PythonGuide",
+    "category": "技术",
+    "keywords": [],
+    "content": "",
+    "file_path": "books\\2b1690254feb423bbfc234b591f7c763.pdf",
+    "file_size": 17,
+    "id": "12911aa2-223b-405f-ab5d-a6ea8c7a387c",
+    "created_at": "2026-05-19 17:52:38"
+  },
+  {
+    "item_type": "note",
+    "title": "Python笔记",
+    "category": "技术",
+    "keywords": [
+      "Python"
+    ],
+    "content": "学Python",
+    "file_path": "",
+    "file_size": 0,
+    "id": "88da6348-61d4-47bc-8359-8f745d3569f8",
+    "created_at": "2026-05-19 17:52:38"
+  },
+  {
+    "item_type": "note",
+    "title": "读书笔记",
+    "category": "读书",
+    "keywords": [
+      "阅读"
+    ],
+    "content": "读了一本书",
+    "file_path": "",
+    "file_size": 0,
+    "id": "5dcb4faf-0dc8-418f-b254-670134cf0cb3",
+    "created_at": "2026-05-19 17:52:39"
+  },
+  {
+    "item_type": "note",
+    "title": "N1",
+    "category": "技术",
+    "keywords": [
+      "Python"
+    ],
+    "content": "",
+    "file_path": "",
+    "file_size": 0,
+    "id": "9a5900e7-a1a3-4bf2-81bb-6ef0cf739927",
+    "created_at": "2026-05-19 17:52:39"
+  },
+  {
+    "item_type": "note",
+    "title": "N2",
+    "category": "技术",
+    "keywords": [
+      "Java"
+    ],
+    "content": "",
+    "file_path": "",
+    "file_size": 0,
+    "id": "20253915-e922-4769-be81-85a2f89e5d8a",
+    "created_at": "2026-05-19 17:52:39"
+  },
+  {
+    "item_type": "note",
+    "title": "新标题",
+    "category": "技术",
+    "keywords": [],
+    "content": "新内容",
+    "file_path": "",
+    "file_size": 0,
+    "id": "59ecfbb9-ce97-4f53-a00e-4bc99c99de30",
+    "created_at": "2026-05-19 17:52:39",
+    "updated_at": "2026-05-19 17:52:39"
+  },
+  {
+    "item_type": "note",
+    "title": "标题",
+    "category": "技术",
+    "keywords": [],
+    "content": "",
+    "file_path": "",
+    "file_size": 0,
+    "id": "5e592ada-3361-4291-8f50-49a9eb976fe4",
+    "created_at": "2026-05-19 17:52:39"
   }
 ]

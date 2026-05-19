@@ -22,12 +22,14 @@ class JSONFileStorage:
             self._save([])
 
     def _load(self) -> list[dict]:
-        """从文件加载数据，返回字典列表。解析失败时返回空列表。"""
+        """从文件加载数据，返回字典列表。"""
         try:
             with open(self.file_path, "r", encoding="utf-8") as f:
                 return json.load(f)
-        except (json.JSONDecodeError, FileNotFoundError):
+        except FileNotFoundError:
             return []
+        except json.JSONDecodeError as e:
+            raise DataLoadError(f"数据文件格式错误 ({self.file_path}): {e}") from e
 
     def _save(self, data: list[dict]) -> None:
         """原子写入：先写临时文件，成功后再替换原文件。"""

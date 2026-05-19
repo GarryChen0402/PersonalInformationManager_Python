@@ -1,6 +1,6 @@
 """技能管理业务逻辑。"""
 
-from Core.Config import SKILL_PATH
+import Core.Config as Config
 from Core.Exceptions import ValidationError
 from Core.Storage import JSONFileStorage
 from Models.Skill import Skill
@@ -12,7 +12,7 @@ class SkillManager:
     VALID_CATEGORIES = ["编程语言", "框架", "工具", "语言", "其他"]
 
     def __init__(self):
-        self.storage = JSONFileStorage(SKILL_PATH)
+        self.storage = JSONFileStorage(Config.SKILL_PATH)
 
     # ---- 增 ----
 

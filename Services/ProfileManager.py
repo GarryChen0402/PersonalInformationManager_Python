@@ -4,7 +4,7 @@ import json
 import os
 from datetime import datetime
 
-from Core.Config import PROFILE_PATH
+import Core.Config as Config
 from Core.Exceptions import DataLoadError, DataSaveError
 from Models.Profile import Profile
 
@@ -17,7 +17,7 @@ class ProfileManager:
     """个人档案管理器，档案以单例 JSON 对象存储。"""
 
     def __init__(self):
-        self.data_path = PROFILE_PATH
+        self.data_path = Config.PROFILE_PATH
 
     def _load(self) -> dict:
         """从文件加载档案，文件不存在或损坏时返回空字典。"""

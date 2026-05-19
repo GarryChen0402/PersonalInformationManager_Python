@@ -2,7 +2,7 @@
 
 import base64
 
-from Core.Config import PASSWORD_PATH
+import Core.Config as Config
 from Core.Exceptions import ValidationError
 from Core.Storage import JSONFileStorage
 from Models.Password import PasswordEntry
@@ -12,7 +12,7 @@ class PasswordManager:
     """密码管理器，密码字段以 base64 编码存储。"""
 
     def __init__(self):
-        self.storage = JSONFileStorage(PASSWORD_PATH)
+        self.storage = JSONFileStorage(Config.PASSWORD_PATH)
 
     @staticmethod
     def _encode(plain: str) -> str:

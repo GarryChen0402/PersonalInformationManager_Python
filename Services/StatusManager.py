@@ -2,7 +2,7 @@
 
 from datetime import datetime, timedelta
 
-from Core.Config import STATUS_PATH
+import Core.Config as Config
 from Core.Exceptions import ValidationError
 from Core.Storage import JSONFileStorage
 from Models.Status import StatusRecord
@@ -12,7 +12,7 @@ class StatusManager:
     """状态记录管理器。"""
 
     def __init__(self):
-        self.storage = JSONFileStorage(STATUS_PATH)
+        self.storage = JSONFileStorage(Config.STATUS_PATH)
 
     # ---- 增 ----
 
@@ -82,9 +82,9 @@ class StatusManager:
         if "mood" in updates:
             self._validate_scores(updates["mood"])
         if "energy" in updates:
-            self._validate_scores(updates.get("energy", 3))
+            self._validate_scores(updates["energy"])
         if "focus" in updates:
-            self._validate_scores(updates.get("focus", 3))
+            self._validate_scores(updates["focus"])
 
         # 移除 updated_at 以避免设置（状态记录只有 created_at）
         updates.pop("updated_at", None)
