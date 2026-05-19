@@ -7,6 +7,8 @@ from .ProfilePage import ProfilePage
 from .SkillPage import SkillPage
 from .StatusPage import StatusPage
 from .KnowledgePage import KnowledgePage
+from .PasswordPage import PasswordPage
+from .BackupPage import BackupPage
 
 
 class App:
@@ -57,18 +59,16 @@ class App:
         self.pages["skill"] = SkillPage(self.content, self.set_status)
         self.pages["status"] = StatusPage(self.content, self.set_status)
         self.pages["knowledge"] = KnowledgePage(self.content, self.set_status)
+        self.pages["password"] = PasswordPage(self.content, self.set_status)
+        self.pages["backup"] = BackupPage(self.content, self.set_status)
 
-        placeholders = [
-            "password", "backup", "dashboard"
-        ]
-        for name in placeholders:
-            frame = tk.Frame(self.content, bg="#ffffff")
-            label = tk.Label(
-                frame, text=f"「{name}」模块开发中...",
-                font=("Microsoft YaHei", 14), fg="#999999", bg="#ffffff"
-            )
-            label.pack(expand=True)
-            self.pages[name] = frame
+        placeholder = tk.Frame(self.content, bg="#ffffff")
+        label = tk.Label(
+            placeholder, text="「dashboard」模块开发中...",
+            font=("Microsoft YaHei", 14), fg="#999999", bg="#ffffff"
+        )
+        label.pack(expand=True)
+        self.pages["dashboard"] = placeholder
 
     def _switch_page(self, page_name: str) -> None:
         """切换内容区显示的页面。"""
