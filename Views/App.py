@@ -3,6 +3,7 @@
 import tkinter as tk
 
 from .NavFrame import NavFrame
+from .ProfilePage import ProfilePage
 
 
 class App:
@@ -48,9 +49,11 @@ class App:
         self.nav.set_active("profile")
 
     def _init_pages(self) -> None:
-        """初始化所有功能页面占位。"""
+        """初始化所有功能页面。"""
+        self.pages["profile"] = ProfilePage(self.content, self.set_status)
+
         placeholders = [
-            "profile", "status", "skill", "knowledge",
+            "status", "skill", "knowledge",
             "password", "backup", "dashboard"
         ]
         for name in placeholders:
