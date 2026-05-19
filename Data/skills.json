@@ -1,0 +1,20 @@
+[
+  {
+    "name": "Django",
+    "category": "框架",
+    "level": 3,
+    "hours_spent": 50.0,
+    "description": "",
+    "id": "34851172-ffa8-46db-9472-1f121e1544a1",
+    "created_at": "2026-05-19 16:48:22"
+  },
+  {
+    "name": "Git",
+    "category": "工具",
+    "level": 5,
+    "hours_spent": 30.0,
+    "description": "",
+    "id": "809c5dcd-9421-4b45-8f49-6dbd64f20e45",
+    "created_at": "2026-05-19 16:48:22"
+  }
+]

@@ -4,6 +4,9 @@ import tkinter as tk
 
 from .NavFrame import NavFrame
 from .ProfilePage import ProfilePage
+from .SkillPage import SkillPage
+from .StatusPage import StatusPage
+from .KnowledgePage import KnowledgePage
 
 
 class App:
@@ -51,9 +54,11 @@ class App:
     def _init_pages(self) -> None:
         """初始化所有功能页面。"""
         self.pages["profile"] = ProfilePage(self.content, self.set_status)
+        self.pages["skill"] = SkillPage(self.content, self.set_status)
+        self.pages["status"] = StatusPage(self.content, self.set_status)
+        self.pages["knowledge"] = KnowledgePage(self.content, self.set_status)
 
         placeholders = [
-            "status", "skill", "knowledge",
             "password", "backup", "dashboard"
         ]
         for name in placeholders:

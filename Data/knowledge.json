@@ -1,0 +1,27 @@
+[
+  {
+    "item_type": "ebook",
+    "title": "STED-mpi",
+    "category": "技术",
+    "keywords": [
+      "STED",
+      "MPI"
+    ],
+    "content": "",
+    "file_path": "books\\88d47caadc1149f6ac7f1f89133520a7.pdf",
+    "file_size": 4263285,
+    "id": "7a3f1f3c-833b-479b-8261-92ec99a2c3ad",
+    "created_at": "2026-05-19 17:01:31"
+  },
+  {
+    "item_type": "note",
+    "title": "asdf",
+    "category": "工作",
+    "keywords": [],
+    "content": "asdf",
+    "file_path": "",
+    "file_size": 0,
+    "id": "03f38efb-0b09-4fee-8774-c34d2becad20",
+    "created_at": "2026-05-19 17:01:53"
+  }
+]
