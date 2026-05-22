@@ -6,22 +6,28 @@ from datetime import datetime
 
 from Services.TodoManager import TodoManager
 from Models.TodoItem import TodoItem
+from .BasePage import BasePage
 from .Widgets import SearchBar, FormDialog, ConfirmDialog, CSVPreviewDialog
 
 PRIORITY_LABELS = {"high": "高", "mid": "中", "low": "低"}
 
 
-class TodoPage(tk.Frame):
+class TodoPage(BasePage):
     """待办事项管理页面，三段式布局。"""
 
     def __init__(self, parent: tk.Widget, set_status):
-        super().__init__(parent, bg="#ffffff")
+        super().__init__(parent, set_status)
         self.manager = TodoManager()
-        self.set_status = set_status
 
         self._build_toolbar()
         self._build_table()
-        self._build_context_menu()
+        self._build_context_menu([
+            ("切换完成状态", self._toggle_complete),
+            ("---", None),
+            ("编辑", self._open_edit_dialog),
+            ("---", None),
+            ("删除", self._confirm_delete),
+        ])
         self._build_stats_bar()
 
     # ---- 工具栏 ----
@@ -118,34 +124,6 @@ class TodoPage(tk.Frame):
         self.tree.tag_configure("completed", foreground="#999999")
 
         self.tree.bind("<Double-1>", lambda e: self._toggle_complete())
-
-    # ---- 右键菜单 ----
-
-    def _build_context_menu(self) -> None:
-        self.context_menu = tk.Menu(self, tearoff=0)
-        self.context_menu.add_command(label="切换完成状态", command=self._toggle_complete)
-        self.context_menu.add_separator()
-        self.context_menu.add_command(label="编辑", command=self._open_edit_dialog)
-        self.context_menu.add_separator()
-        self.context_menu.add_command(label="删除", command=self._confirm_delete)
-
-        self.tree.bind("<Button-3>", self._show_context_menu)
-
-    def _show_context_menu(self, event) -> None:
-        item = self.tree.identify_row(event.y)
-        if item:
-            self.tree.selection_set(item)
-            self.context_menu.post(event.x_root, event.y_root)
-
-    # ---- 底部统计 ----
-
-    def _build_stats_bar(self) -> None:
-        self.stats_var = tk.StringVar()
-        stats = tk.Label(
-            self, textvariable=self.stats_var, bg="#f5f5f5",
-            font=("Microsoft YaHei", 9), fg="#666666", pady=6
-        )
-        stats.pack(fill=tk.X, side=tk.BOTTOM)
 
     # ---- 添加 ----
 
@@ -296,8 +274,7 @@ class TodoPage(tk.Frame):
         self._populate_tree(items)
 
     def _populate_tree(self, items: list[TodoItem]) -> None:
-        for row in self.tree.get_children():
-            self.tree.delete(row)
+        self._clear_tree()
 
         for item in items:
             tags = []
@@ -336,19 +313,10 @@ class TodoPage(tk.Frame):
         self.stats_var.set("  |  ".join(parts))
 
     def _get_selected(self) -> TodoItem | None:
-        selection = self.tree.selection()
-        if not selection:
-            messagebox.showinfo("提示", "请先选中一条记录")
+        todo_id = self._get_selected_id()
+        if not todo_id:
             return None
-        return self.manager.get_by_id(selection[0])
-
-    def highlight_item(self, item_id: str) -> None:
-        """定位并高亮指定条目。"""
-        if not self.tree.exists(item_id):
-            return
-        self.tree.selection_set(item_id)
-        self.tree.see(item_id)
-        self.tree.focus(item_id)
+        return self.manager.get_by_id(todo_id)
 
     # ---- CSV 导入导出 ----
 

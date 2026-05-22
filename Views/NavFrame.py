@@ -10,14 +10,14 @@ class NavFrame(tk.Frame):
     """左侧导航栏，包含全局搜索和各功能模块的切换按钮。"""
 
     NAV_ITEMS = [
-        ("profile", "个人档案"),
-        ("status", "状态管理"),
-        ("skill", "技能管理"),
-        ("knowledge", "知识管理"),
-        ("todo", "待办事项"),
-        ("password", "密码管理"),
-        ("backup", "数据管理"),
-        ("dashboard", "数据概览"),
+        ("profile", "◉  个人档案"),
+        ("status", "★  状态管理"),
+        ("skill", "◆  技能管理"),
+        ("knowledge", "◣  知识管理"),
+        ("todo", "☑  待办事项"),
+        ("password", "⚿  密码管理"),
+        ("backup", "⚙  数据管理"),
+        ("dashboard", "▣  数据概览"),
     ]
 
     def __init__(self, parent: tk.Widget, on_select: Callable[[str], None],

@@ -6,6 +6,7 @@ from datetime import datetime, timedelta
 
 from Services.StatusManager import StatusManager
 from Models.Status import StatusRecord
+from .BasePage import BasePage
 from .Widgets import SearchBar, FormDialog, ConfirmDialog, DateRangePicker
 from .ChartWidgets import LineChart
 
@@ -17,18 +18,21 @@ COLOR_TAGS = {
 }
 
 
-class StatusPage(tk.Frame):
+class StatusPage(BasePage):
     """状态管理页面，三段式布局。"""
 
     def __init__(self, parent: tk.Widget, set_status):
-        super().__init__(parent, bg="#ffffff")
+        super().__init__(parent, set_status)
         self.manager = StatusManager()
-        self.set_status = set_status
 
         self._build_toolbar()
         self._build_chart()
         self._build_table()
-        self._build_context_menu()
+        self._build_context_menu([
+            ("编辑", self._open_edit_dialog),
+            ("---", None),
+            ("删除", self._confirm_delete),
+        ])
         self._build_stats_bar()
 
     # ---- 工具栏 ----
@@ -87,32 +91,6 @@ class StatusPage(tk.Frame):
         self.tree.tag_configure("high", background="#e8f8f0", foreground="#27ae60")
 
         self.tree.bind("<Double-1>", lambda e: self._open_edit_dialog())
-
-    # ---- 右键菜单 ----
-
-    def _build_context_menu(self) -> None:
-        self.context_menu = tk.Menu(self, tearoff=0)
-        self.context_menu.add_command(label="编辑", command=self._open_edit_dialog)
-        self.context_menu.add_separator()
-        self.context_menu.add_command(label="删除", command=self._confirm_delete)
-
-        self.tree.bind("<Button-3>", self._show_context_menu)
-
-    def _show_context_menu(self, event) -> None:
-        item = self.tree.identify_row(event.y)
-        if item:
-            self.tree.selection_set(item)
-            self.context_menu.post(event.x_root, event.y_root)
-
-    # ---- 统计栏 ----
-
-    def _build_stats_bar(self) -> None:
-        self.stats_var = tk.StringVar()
-        stats = tk.Label(
-            self, textvariable=self.stats_var, bg="#f5f5f5",
-            font=("Microsoft YaHei", 9), fg="#666666", pady=6
-        )
-        stats.pack(fill=tk.X, side=tk.BOTTOM)
 
     # ---- 趋势图 ----
 
@@ -297,9 +275,7 @@ class StatusPage(tk.Frame):
             self.stats_var.set("本周暂无记录")
 
     def _populate_tree(self, records: list[StatusRecord]) -> None:
-        """用记录列表填充 Treeview。"""
-        for item in self.tree.get_children():
-            self.tree.delete(item)
+        self._clear_tree()
 
         for r in records:
             avg = (r.mood + r.energy + r.focus) / 3
@@ -321,20 +297,10 @@ class StatusPage(tk.Frame):
             ), tags=(tag,))
 
     def _get_selected(self) -> StatusRecord | None:
-        """获取当前选中行的 StatusRecord 对象。"""
-        selection = self.tree.selection()
-        if not selection:
-            messagebox.showinfo("提示", "请先选中一条记录")
+        record_id = self._get_selected_id()
+        if not record_id:
             return None
-        return self.manager.get_by_id(selection[0])
-
-    def highlight_item(self, item_id: str) -> None:
-        """定位并高亮指定条目。"""
-        if not self.tree.exists(item_id):
-            return
-        self.tree.selection_set(item_id)
-        self.tree.see(item_id)
-        self.tree.focus(item_id)
+        return self.manager.get_by_id(record_id)
 
     # ---- CSV 导出 ----
 

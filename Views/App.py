@@ -1,6 +1,7 @@
 """应用程序主窗口。"""
 
 import tkinter as tk
+from tkinter import font as tkfont
 from tkinter import messagebox
 
 from .NavFrame import NavFrame
@@ -61,6 +62,9 @@ class App:
         self.root.title("个人信息管理器 (PIM)")
         self.root.geometry("960x640")
         self.root.minsize(800, 500)
+
+        # 字体缩放
+        self._font_scale = 1.0
 
         # 加载配置
         self.config_manager = ConfigManager()
@@ -175,7 +179,7 @@ class App:
             font=("Microsoft YaHei", 11), width=30
         )
         pwd_entry.pack(fill=tk.X, pady=(0, 12))
-        pwd_entry.focus_set()
+        dialog.after_idle(pwd_entry.focus_set)
 
         error_var = tk.StringVar()
         error_label = tk.Label(
@@ -261,7 +265,7 @@ class App:
             font=("Microsoft YaHei", 11)
         )
         pwd_entry.pack(fill=tk.X, pady=(2, 8))
-        pwd_entry.focus_set()
+        dialog.after_idle(pwd_entry.focus_set)
 
         tk.Label(
             frame, text="确认密码：", font=("Microsoft YaHei", 9)
@@ -446,6 +450,12 @@ class App:
         """绑定全局键盘快捷键。"""
         self.root.bind("<Control-t>", lambda e: self._toggle_theme())
         self.root.bind("<Control-Shift-F>", lambda e: self._focus_search())
+        self.root.bind("<Control-s>", lambda e: self._focus_search())
+        self.root.bind("<Control-n>", lambda e: self._new_item_shortcut())
+        # 字体缩放
+        self.root.bind("<Control-equal>", lambda e: self._scale_fonts(0.1))
+        self.root.bind("<Control-minus>", lambda e: self._scale_fonts(-0.1))
+        self.root.bind("<Control-0>", lambda e: self._reset_font_scale())
         # Ctrl+1~8 快速切换导航
         nav_order = ["profile", "status", "skill", "knowledge", "todo", "password", "backup", "dashboard"]
         for i, name in enumerate(nav_order):
@@ -460,6 +470,59 @@ class App:
         """聚焦全局搜索框。"""
         if self.nav.search_bar:
             self.nav.search_bar.focus()
+
+    def _new_item_shortcut(self) -> None:
+        """Ctrl+N 触发当前页面的创建操作。"""
+        current_module = self.config_manager.get_last_active_module()
+        page = self.pages.get(current_module)
+        if page is None:
+            return
+        # 各页面的创建方法名
+        method_names = ["_open_add_dialog", "_open_create_dialog",
+                        "_open_import_dialog", "_toggle_edit"]
+        for method_name in method_names:
+            method = getattr(page, method_name, None)
+            if callable(method):
+                method()
+                return
+
+    # ---- 字体缩放 ----
+
+    def _scale_fonts(self, delta: float) -> None:
+        """缩放全局字体。"""
+        new_scale = max(0.6, min(2.0, self._font_scale + delta))
+        if new_scale == self._font_scale:
+            return
+        self._font_scale = new_scale
+        self._walk_scale_fonts(self.root, self._font_scale)
+        self.set_status(f"字体缩放：{self._font_scale:.1f}x")
+
+    def _reset_font_scale(self) -> None:
+        """重置字体缩放为 1.0。"""
+        if self._font_scale == 1.0:
+            return
+        self._font_scale = 1.0
+        self._walk_scale_fonts(self.root, 1.0)
+        self.set_status("字体缩放已重置")
+
+    def _walk_scale_fonts(self, widget: tk.Widget, scale: float) -> None:
+        """递归应用字体缩放到所有子控件。"""
+        for child in widget.winfo_children():
+            try:
+                font_info = tkfont.Font(font=child.cget("font"))
+                cfg = font_info.configure()
+                size = cfg.get("size", 9)
+                if size and isinstance(size, (int, float)) and size > 0:
+                    key = f"_base_size_{child}"
+                    if not hasattr(child, key):
+                        setattr(child, key, size)
+                    base = getattr(child, key)
+                    new_size = max(5, int(base * scale))
+                    font_info.configure(size=new_size)
+                    child.configure(font=font_info)
+            except Exception:
+                pass
+            self._walk_scale_fonts(child, scale)
 
     # ---- 关闭 ----
 

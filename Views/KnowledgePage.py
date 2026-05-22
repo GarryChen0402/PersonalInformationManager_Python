@@ -6,6 +6,7 @@ from tkinter import ttk, filedialog, messagebox
 
 from Services.KnowledgeManager import KnowledgeManager
 from Models.Knowledge import KnowledgeItem
+from .BasePage import BasePage
 from .Widgets import SearchBar, FormDialog, ConfirmDialog, KeywordEntry
 from .ChartWidgets import BarChart
 
@@ -65,13 +66,12 @@ class KnowledgePage(tk.Frame):
 #  NoteTabView — 文本笔记
 # ============================================================
 
-class NoteTabView(tk.Frame):
+class NoteTabView(BasePage):
     """文本笔记子视图，左右分栏布局。"""
 
     def __init__(self, parent: tk.Widget, manager: KnowledgeManager, set_status):
-        super().__init__(parent, bg="#ffffff")
+        super().__init__(parent, set_status)
         self.manager = manager
-        self.set_status = set_status
         self.current_note: KnowledgeItem | None = None
 
         self._build_toolbar()
@@ -97,7 +97,7 @@ class NoteTabView(tk.Frame):
         self.note_bar_chart.pack(fill=tk.X, padx=12, pady=(4, 0))
 
         # 底部统计
-        self._build_stats_bar()
+        self._build_stats_bar(pady=4)
 
     # ---- 工具栏 ----
 
@@ -134,27 +134,27 @@ class NoteTabView(tk.Frame):
 
     def _build_note_list(self, parent: tk.Frame) -> None:
         columns = ("title", "category", "keywords", "updated")
-        self.note_tree = ttk.Treeview(parent, columns=columns, show="headings",
+        self.tree = ttk.Treeview(parent, columns=columns, show="headings",
                                       selectmode="browse")
 
-        self.note_tree.heading("title", text="标题")
-        self.note_tree.heading("category", text="类别")
-        self.note_tree.heading("keywords", text="关键词")
-        self.note_tree.heading("updated", text="更新时间")
+        self.tree.heading("title", text="标题")
+        self.tree.heading("category", text="类别")
+        self.tree.heading("keywords", text="关键词")
+        self.tree.heading("updated", text="更新时间")
 
-        self.note_tree.column("title", width=120)
-        self.note_tree.column("category", width=50, anchor=tk.CENTER)
-        self.note_tree.column("keywords", width=80)
-        self.note_tree.column("updated", width=80, anchor=tk.CENTER)
+        self.tree.column("title", width=120)
+        self.tree.column("category", width=50, anchor=tk.CENTER)
+        self.tree.column("keywords", width=80)
+        self.tree.column("updated", width=80, anchor=tk.CENTER)
 
         scrollbar = ttk.Scrollbar(parent, orient=tk.VERTICAL,
-                                  command=self.note_tree.yview)
-        self.note_tree.configure(yscrollcommand=scrollbar.set)
+                                  command=self.tree.yview)
+        self.tree.configure(yscrollcommand=scrollbar.set)
 
-        self.note_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        self.tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
-        self.note_tree.bind("<<TreeviewSelect>>", self._on_select_note)
+        self.tree.bind("<<TreeviewSelect>>", self._on_select_note)
 
     # ---- 右侧详情面板 ----
 
@@ -223,20 +223,10 @@ class NoteTabView(tk.Frame):
             self.save_btn.configure(state=tk.DISABLED)
             self.delete_btn.configure(state=tk.DISABLED)
 
-    # ---- 底部统计 ----
-
-    def _build_stats_bar(self) -> None:
-        self.stats_var = tk.StringVar()
-        stats = tk.Label(
-            self, textvariable=self.stats_var, bg="#f5f5f5",
-            font=("Microsoft YaHei", 9), fg="#666666", pady=4
-        )
-        stats.pack(fill=tk.X, side=tk.BOTTOM)
-
     # ---- 选择笔记 ----
 
     def _on_select_note(self, event) -> None:
-        selection = self.note_tree.selection()
+        selection = self.tree.selection()
         if not selection:
             return
         note_id = selection[0]
@@ -331,7 +321,7 @@ class NoteTabView(tk.Frame):
             return
         results = self.manager.search(keyword)
         results = [r for r in results if r.item_type == "note"]
-        self._populate_note_tree(results)
+        self._populate_tree(results)
 
     def _on_filter(self) -> None:
         category = self.category_filter.get()
@@ -339,7 +329,7 @@ class NoteTabView(tk.Frame):
             self._refresh_note_list()
             return
         results = self.manager.get_by_category(category, item_type="note")
-        self._populate_note_tree(results)
+        self._populate_tree(results)
 
     # ---- 数据刷新 ----
 
@@ -349,7 +339,7 @@ class NoteTabView(tk.Frame):
 
     def _refresh_note_list(self) -> None:
         notes = self.manager.get_all(item_type="note")
-        self._populate_note_tree(notes)
+        self._populate_tree(notes)
 
         # 更新类别筛选
         categories = self.manager.get_all_categories(item_type="note")
@@ -357,24 +347,15 @@ class NoteTabView(tk.Frame):
         if not self.category_filter.get():
             self.category_filter.set("全部")
 
-    def _populate_note_tree(self, notes: list[KnowledgeItem]) -> None:
-        for item in self.note_tree.get_children():
-            self.note_tree.delete(item)
+    def _populate_tree(self, notes: list[KnowledgeItem]) -> None:
+        self._clear_tree()
         for n in notes:
-            self.note_tree.insert("", tk.END, iid=n.id, values=(
+            self.tree.insert("", tk.END, iid=n.id, values=(
                 n.title,
                 n.category,
                 _format_keywords(n.keywords),
                 n.updated_at[:10] if n.updated_at else n.created_at[:10],
             ))
-
-    def highlight_item(self, item_id: str) -> None:
-        """定位并高亮指定笔记条目。"""
-        if not self.note_tree.exists(item_id):
-            return
-        self.note_tree.selection_set(item_id)
-        self.note_tree.see(item_id)
-        self.note_tree.focus(item_id)
 
     def _export_csv(self) -> None:
         path = filedialog.asksaveasfilename(
@@ -414,18 +395,23 @@ class NoteTabView(tk.Frame):
 #  EbookTabView — PDF 电子书
 # ============================================================
 
-class EbookTabView(tk.Frame):
+class EbookTabView(BasePage):
     """PDF 电子书子视图。"""
 
     def __init__(self, parent: tk.Widget, manager: KnowledgeManager, set_status):
-        super().__init__(parent, bg="#ffffff")
+        super().__init__(parent, set_status)
         self.manager = manager
-        self.set_status = set_status
 
         self._build_toolbar()
         self._build_table()
-        self._build_context_menu()
-        self._build_stats_bar()
+        self._build_context_menu([
+            ("打开阅读", self._open_ebook),
+            ("---", None),
+            ("编辑信息", self._open_edit_dialog),
+            ("---", None),
+            ("删除", self._confirm_delete),
+        ])
+        self._build_stats_bar(pady=4)
 
     # ---- 工具栏 ----
 
@@ -478,34 +464,6 @@ class EbookTabView(tk.Frame):
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y, padx=(0, 12), pady=8)
 
         self.tree.bind("<Double-1>", lambda e: self._open_ebook())
-
-    # ---- 右键菜单 ----
-
-    def _build_context_menu(self) -> None:
-        self.context_menu = tk.Menu(self, tearoff=0)
-        self.context_menu.add_command(label="打开阅读", command=self._open_ebook)
-        self.context_menu.add_separator()
-        self.context_menu.add_command(label="编辑信息", command=self._open_edit_dialog)
-        self.context_menu.add_separator()
-        self.context_menu.add_command(label="删除", command=self._confirm_delete)
-
-        self.tree.bind("<Button-3>", self._show_context_menu)
-
-    def _show_context_menu(self, event) -> None:
-        item = self.tree.identify_row(event.y)
-        if item:
-            self.tree.selection_set(item)
-            self.context_menu.post(event.x_root, event.y_root)
-
-    # ---- 底部统计 ----
-
-    def _build_stats_bar(self) -> None:
-        self.stats_var = tk.StringVar()
-        stats = tk.Label(
-            self, textvariable=self.stats_var, bg="#f5f5f5",
-            font=("Microsoft YaHei", 9), fg="#666666", pady=4
-        )
-        stats.pack(fill=tk.X, side=tk.BOTTOM)
 
     # ---- 导入 ----
 
@@ -598,8 +556,7 @@ class EbookTabView(tk.Frame):
         self.stats_var.set(f"共 {stats['total_ebooks']} 本电子书")
 
     def _populate_tree(self, ebooks: list[KnowledgeItem]) -> None:
-        for item in self.tree.get_children():
-            self.tree.delete(item)
+        self._clear_tree()
         for eb in ebooks:
             self.tree.insert("", tk.END, iid=eb.id, values=(
                 eb.title,
@@ -610,19 +567,10 @@ class EbookTabView(tk.Frame):
             ))
 
     def _get_selected(self) -> KnowledgeItem | None:
-        selection = self.tree.selection()
-        if not selection:
-            messagebox.showinfo("提示", "请先选中一本电子书")
+        ebook_id = self._get_selected_id("请先选中一本电子书")
+        if not ebook_id:
             return None
-        return self.manager.get_by_id(selection[0])
-
-    def highlight_item(self, item_id: str) -> None:
-        """定位并高亮指定电子书条目。"""
-        if not self.tree.exists(item_id):
-            return
-        self.tree.selection_set(item_id)
-        self.tree.see(item_id)
-        self.tree.focus(item_id)
+        return self.manager.get_by_id(ebook_id)
 
 
 # ============================================================

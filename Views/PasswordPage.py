@@ -6,20 +6,27 @@ from tkinter import ttk, messagebox
 from Services.PasswordManager import PasswordManager
 from Services.CryptoService import CryptoService
 from Models.Password import PasswordEntry
+from .BasePage import BasePage
 from .Widgets import SearchBar, FormDialog, ConfirmDialog
 
 
-class PasswordPage(tk.Frame):
+class PasswordPage(BasePage):
     """密码管理页面，密码不明文显示在列表中。"""
 
     def __init__(self, parent: tk.Widget, set_status):
-        super().__init__(parent, bg="#ffffff")
+        super().__init__(parent, set_status)
         self.manager = PasswordManager()
-        self.set_status = set_status
 
         self._build_toolbar()
         self._build_table()
-        self._build_context_menu()
+        self._build_context_menu([
+            ("查看密码", self._view_password),
+            ("复制密码", self._copy_password),
+            ("---", None),
+            ("编辑", self._open_edit_dialog),
+            ("---", None),
+            ("删除", self._confirm_delete),
+        ])
         self._build_stats_bar()
 
     # ---- 工具栏 ----
@@ -89,35 +96,6 @@ class PasswordPage(tk.Frame):
         self.tree.pack(fill=tk.BOTH, expand=True, padx=12, pady=8)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y, padx=(0, 12), pady=8)
 
-    # ---- 右键菜单 ----
-
-    def _build_context_menu(self) -> None:
-        self.context_menu = tk.Menu(self, tearoff=0)
-        self.context_menu.add_command(label="查看密码", command=self._view_password)
-        self.context_menu.add_command(label="复制密码", command=self._copy_password)
-        self.context_menu.add_separator()
-        self.context_menu.add_command(label="编辑", command=self._open_edit_dialog)
-        self.context_menu.add_separator()
-        self.context_menu.add_command(label="删除", command=self._confirm_delete)
-
-        self.tree.bind("<Button-3>", self._show_context_menu)
-
-    def _show_context_menu(self, event) -> None:
-        item = self.tree.identify_row(event.y)
-        if item:
-            self.tree.selection_set(item)
-            self.context_menu.post(event.x_root, event.y_root)
-
-    # ---- 底部统计 ----
-
-    def _build_stats_bar(self) -> None:
-        self.stats_var = tk.StringVar()
-        stats = tk.Label(
-            self, textvariable=self.stats_var, bg="#f5f5f5",
-            font=("Microsoft YaHei", 9), fg="#666666", pady=6
-        )
-        stats.pack(fill=tk.X, side=tk.BOTTOM)
-
     # ---- 主密码管理 ----
 
     def _ensure_crypto_ready(self) -> bool:
@@ -169,7 +147,7 @@ class PasswordPage(tk.Frame):
         pwd_entry = tk.Entry(frame, textvariable=pwd_var, show="*",
                              font=("Microsoft YaHei", 11))
         pwd_entry.pack(fill=tk.X, pady=(2, 8))
-        pwd_entry.focus_set()
+        dialog.after_idle(pwd_entry.focus_set)
 
         tk.Label(frame, text="确认密码：", font=("Microsoft YaHei", 9)).pack(anchor=tk.W)
         confirm_var = tk.StringVar()
@@ -242,7 +220,7 @@ class PasswordPage(tk.Frame):
         pwd_entry = tk.Entry(frame, textvariable=pwd_var, show="*",
                              font=("Microsoft YaHei", 11), width=30)
         pwd_entry.pack(fill=tk.X, pady=(0, 12))
-        pwd_entry.focus_set()
+        dialog.after_idle(pwd_entry.focus_set)
 
         error_var = tk.StringVar()
         error_label = tk.Label(
@@ -424,8 +402,7 @@ class PasswordPage(tk.Frame):
         self._update_master_pwd_btn()
 
     def _populate_tree(self, entries: list[PasswordEntry]) -> None:
-        for item in self.tree.get_children():
-            self.tree.delete(item)
+        self._clear_tree()
         for e in entries:
             self.tree.insert("", tk.END, iid=e.id, values=(
                 e.platform, e.url, e.username, e.note,
@@ -433,16 +410,7 @@ class PasswordPage(tk.Frame):
             ))
 
     def _get_selected(self) -> PasswordEntry | None:
-        selection = self.tree.selection()
-        if not selection:
-            messagebox.showinfo("提示", "请先选中一条记录")
+        entry_id = self._get_selected_id()
+        if not entry_id:
             return None
-        return self.manager.get_by_id(selection[0])
-
-    def highlight_item(self, item_id: str) -> None:
-        """定位并高亮指定条目。"""
-        if not self.tree.exists(item_id):
-            return
-        self.tree.selection_set(item_id)
-        self.tree.see(item_id)
-        self.tree.focus(item_id)
+        return self.manager.get_by_id(entry_id)
