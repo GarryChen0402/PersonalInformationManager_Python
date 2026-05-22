@@ -1,5 +1,6 @@
 """知识管理业务逻辑 — 笔记 + 电子书。"""
 
+import csv
 import os
 import shutil
 import subprocess
@@ -222,3 +223,15 @@ class KnowledgeManager:
                     raise ValidationError("所选文件不是有效的 PDF 文件")
         except OSError as e:
             raise ValidationError(f"无法读取文件: {e}") from e
+
+    # ---- CSV 导出 ----
+
+    def export_notes_csv(self, path: str) -> None:
+        """导出笔记数据为 CSV 文件。"""
+        notes = self.get_all(item_type="note")
+        with open(path, "w", newline="", encoding="utf-8-sig") as f:
+            writer = csv.writer(f)
+            writer.writerow(["标题", "类别", "关键词", "内容", "创建时间"])
+            for n in notes:
+                writer.writerow([n.title, n.category,
+                                " ".join(n.keywords), n.content, n.created_at])

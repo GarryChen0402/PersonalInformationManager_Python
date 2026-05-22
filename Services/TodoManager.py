@@ -1,5 +1,6 @@
 """待办事项管理业务逻辑。"""
 
+import csv
 from datetime import datetime
 
 import Core.Config as Config
@@ -155,3 +156,43 @@ class TodoManager:
             return (-overdue, prio, due, created)
         items.sort(key=sort_key)
         return items
+
+    # ---- CSV 导入导出 ----
+
+    def export_csv(self, path: str) -> None:
+        """导出待办数据为 CSV 文件。"""
+        todos = self.get_all()
+        with open(path, "w", newline="", encoding="utf-8-sig") as f:
+            writer = csv.writer(f)
+            writer.writerow(["标题", "描述", "优先级", "类别", "截止日期", "完成", "创建时间"])
+            for t in todos:
+                writer.writerow([t.title, t.description, t.priority,
+                                t.category, t.due_date,
+                                "是" if t.completed else "否", t.created_at])
+
+    def import_csv(self, path: str) -> dict:
+        """从 CSV 导入待办。返回 {success, failed, errors}。"""
+        result = {"success": 0, "failed": 0, "errors": []}
+        with open(path, "r", encoding="utf-8-sig") as f:
+            reader = csv.DictReader(f)
+            for i, row in enumerate(reader, start=2):
+                try:
+                    title = row.get("标题", "").strip()
+                    if not title:
+                        raise ValidationError("标题为空")
+                    priority = row.get("优先级", "mid").strip()
+                    completed = row.get("完成", "").strip() == "是"
+                    todo = self.add_todo(
+                        title=title,
+                        description=row.get("描述", "").strip(),
+                        priority=priority if priority in self.VALID_PRIORITIES else "mid",
+                        due_date=row.get("截止日期", "").strip(),
+                        category=row.get("类别", "").strip(),
+                    )
+                    if completed:
+                        self.toggle_complete(todo.id)
+                    result["success"] += 1
+                except Exception as e:
+                    result["failed"] += 1
+                    result["errors"].append(f"第{i}行: {e}")
+        return result

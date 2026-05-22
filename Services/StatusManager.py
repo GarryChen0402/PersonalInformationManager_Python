@@ -2,6 +2,8 @@
 
 from datetime import datetime, timedelta
 
+import csv
+
 import Core.Config as Config
 from Core.Exceptions import ValidationError
 from Core.Storage import JSONFileStorage
@@ -142,3 +144,15 @@ class StatusManager:
         for s in scores:
             if s < 1 or s > 5:
                 raise ValidationError("评分必须在 1-5 之间")
+
+    # ---- CSV 导出 ----
+
+    def export_csv(self, path: str) -> None:
+        """导出状态记录为 CSV 文件。"""
+        records = self.get_all()
+        with open(path, "w", newline="", encoding="utf-8-sig") as f:
+            writer = csv.writer(f)
+            writer.writerow(["日期", "心情", "精力", "专注度", "体重", "睡眠时长", "备注"])
+            for r in records:
+                writer.writerow([r.date, r.mood, r.energy, r.focus,
+                                r.weight, r.sleep_hours, r.note])

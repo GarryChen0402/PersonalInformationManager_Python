@@ -118,6 +118,12 @@ class NoteTabView(tk.Frame):
         self.category_filter.pack(side=tk.LEFT, padx=4)
         self.category_filter.bind("<<ComboboxSelected>>", lambda e: self._on_filter())
 
+        export_btn = tk.Button(
+            toolbar, text="导出CSV", command=self._export_csv,
+            font=("Microsoft YaHei", 9), padx=12, cursor="hand2"
+        )
+        export_btn.pack(side=tk.RIGHT, padx=4)
+
         add_btn = tk.Button(
             toolbar, text="+ 新建笔记", command=self._open_create_dialog,
             font=("Microsoft YaHei", 9), padx=12, cursor="hand2"
@@ -369,6 +375,19 @@ class NoteTabView(tk.Frame):
         self.note_tree.selection_set(item_id)
         self.note_tree.see(item_id)
         self.note_tree.focus(item_id)
+
+    def _export_csv(self) -> None:
+        path = filedialog.asksaveasfilename(
+            defaultextension=".csv",
+            filetypes=[("CSV 文件", "*.csv")],
+            initialfile="notes.csv"
+        )
+        if path:
+            try:
+                self.manager.export_notes_csv(path)
+                self.set_status(f"笔记数据已导出到 {path}")
+            except Exception as e:
+                messagebox.showerror("导出失败", str(e))
 
     def _update_stats(self) -> None:
         stats = self.manager.get_statistics()

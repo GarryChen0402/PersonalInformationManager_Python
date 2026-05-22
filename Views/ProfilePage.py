@@ -174,12 +174,15 @@ class ProfilePage(tk.Frame):
     def _export(self) -> None:
         path = filedialog.asksaveasfilename(
             defaultextension=".json",
-            filetypes=[("JSON 文件", "*.json")],
+            filetypes=[("JSON 文件", "*.json"), ("CSV 文件", "*.csv")],
             initialfile="profile.json"
         )
         if path:
             try:
-                self.manager.export_profile(path)
+                if path.endswith(".csv"):
+                    self.manager.export_csv(path)
+                else:
+                    self.manager.export_profile(path)
                 self._update_status(f"档案已导出到 {path}")
             except Exception as e:
                 messagebox.showerror("导出失败", str(e))

@@ -1,5 +1,6 @@
 """可复用的 Tkinter 通用组件。"""
 
+import csv
 import tkinter as tk
 from tkinter import ttk, messagebox
 from typing import Callable
@@ -332,3 +333,84 @@ class KeywordEntry(tk.Frame):
     def set_keywords(self, keywords: list[str]) -> None:
         self._keywords = list(keywords)
         self._render_tags()
+
+
+# ---- CSVPreviewDialog ----
+
+class CSVPreviewDialog(tk.Toplevel):
+    """CSV 导入预览对话框。"""
+
+    def __init__(self, parent: tk.Widget, file_path: str,
+                 on_confirm: Callable[[str], None]):
+        super().__init__(parent)
+        self.title("CSV 导入预览")
+        self.resizable(True, True)
+        self.transient(parent)
+        self.grab_set()
+
+        self.file_path = file_path
+        self.on_confirm = on_confirm
+
+        self._build()
+
+    def _build(self) -> None:
+        frame = tk.Frame(self, padx=12, pady=12)
+        frame.pack(fill=tk.BOTH, expand=True)
+
+        tk.Label(
+            frame, text=f"文件：{self.file_path}",
+            font=("Microsoft YaHei", 9), fg="#666666", anchor=tk.W
+        ).pack(fill=tk.X, pady=(0, 8))
+
+        # 预览表格（前 5 行）
+        columns: list[str] = []
+        try:
+            with open(self.file_path, "r", encoding="utf-8-sig") as f:
+                reader = csv.reader(f)
+                header = next(reader)
+                columns = [h.strip() for h in header]
+                preview_rows = [next(reader) for _ in range(5)]
+        except (StopIteration, OSError):
+            columns = ["(无法读取)"]
+            preview_rows = []
+
+        tree = ttk.Treeview(frame, columns=columns, show="headings", height=6)
+        for col in columns:
+            tree.heading(col, text=col)
+            tree.column(col, width=max(60, 360 // len(columns)))
+
+        scrollbar = ttk.Scrollbar(frame, orient=tk.VERTICAL, command=tree.yview)
+        tree.configure(yscrollcommand=scrollbar.set)
+        tree.pack(fill=tk.BOTH, expand=True, side=tk.LEFT)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+        for row in preview_rows:
+            tree.insert("", tk.END, values=row)
+
+        # 总行数
+        total = sum(1 for _ in open(self.file_path, "r", encoding="utf-8-sig")) - 1
+        info = tk.Label(
+            frame, text=f"共 {total} 行数据（预览前 {min(5, total)} 行）",
+            font=("Microsoft YaHei", 9), fg="#666666"
+        )
+        info.pack(anchor=tk.W, pady=(8, 0))
+
+        # 按钮
+        btn_frame = tk.Frame(self, pady=10)
+        btn_frame.pack(fill=tk.X)
+
+        cancel_btn = tk.Button(
+            btn_frame, text="取消", command=self.destroy,
+            font=("Microsoft YaHei", 9), padx=16, cursor="hand2"
+        )
+        cancel_btn.pack(side=tk.RIGHT, padx=8)
+
+        confirm_btn = tk.Button(
+            btn_frame, text="确认导入", command=self._do_confirm,
+            font=("Microsoft YaHei", 9), padx=16, cursor="hand2"
+        )
+        confirm_btn.pack(side=tk.RIGHT)
+
+    def _do_confirm(self) -> None:
+        self.on_confirm(self.file_path)
+        self.destroy()

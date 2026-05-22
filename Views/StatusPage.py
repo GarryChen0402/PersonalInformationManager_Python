@@ -1,7 +1,7 @@
 """状态管理页面。"""
 
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import ttk, filedialog, messagebox
 from datetime import datetime, timedelta
 
 from Services.StatusManager import StatusManager
@@ -39,6 +39,12 @@ class StatusPage(tk.Frame):
 
         self.date_picker = DateRangePicker(toolbar, on_query=self._on_date_range)
         self.date_picker.pack(side=tk.LEFT)
+
+        export_btn = tk.Button(
+            toolbar, text="导出CSV", command=self._export_csv,
+            font=("Microsoft YaHei", 9), padx=12, cursor="hand2"
+        )
+        export_btn.pack(side=tk.RIGHT, padx=4)
 
         add_btn = tk.Button(
             toolbar, text="+ 添加记录", command=self._open_add_dialog,
@@ -329,3 +335,18 @@ class StatusPage(tk.Frame):
         self.tree.selection_set(item_id)
         self.tree.see(item_id)
         self.tree.focus(item_id)
+
+    # ---- CSV 导出 ----
+
+    def _export_csv(self) -> None:
+        path = filedialog.asksaveasfilename(
+            defaultextension=".csv",
+            filetypes=[("CSV 文件", "*.csv")],
+            initialfile="status.csv"
+        )
+        if path:
+            try:
+                self.manager.export_csv(path)
+                self.set_status(f"状态记录已导出到 {path}")
+            except Exception as e:
+                messagebox.showerror("导出失败", str(e))

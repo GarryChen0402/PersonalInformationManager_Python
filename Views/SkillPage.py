@@ -1,11 +1,11 @@
 """技能管理页面。"""
 
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import ttk, filedialog, messagebox
 
 from Services.SkillManager import SkillManager
 from Models.Skill import Skill
-from .Widgets import SearchBar, FormDialog, ConfirmDialog
+from .Widgets import SearchBar, FormDialog, ConfirmDialog, CSVPreviewDialog
 from .ChartWidgets import RadarChart, BarChart
 
 
@@ -41,6 +41,18 @@ class SkillPage(tk.Frame):
         )
         self.category_filter.pack(side=tk.LEFT, padx=4)
         self.category_filter.bind("<<ComboboxSelected>>", lambda e: self._on_filter())
+
+        import_btn = tk.Button(
+            toolbar, text="导入CSV", command=self._import_csv,
+            font=("Microsoft YaHei", 9), padx=12, cursor="hand2"
+        )
+        import_btn.pack(side=tk.RIGHT, padx=4)
+
+        export_btn = tk.Button(
+            toolbar, text="导出CSV", command=self._export_csv,
+            font=("Microsoft YaHei", 9), padx=12, cursor="hand2"
+        )
+        export_btn.pack(side=tk.RIGHT, padx=4)
 
         add_btn = tk.Button(
             toolbar, text="+ 添加技能", command=self._open_add_dialog,
@@ -288,3 +300,36 @@ class SkillPage(tk.Frame):
         self.tree.selection_set(item_id)
         self.tree.see(item_id)
         self.tree.focus(item_id)
+
+    # ---- CSV 导入导出 ----
+
+    def _export_csv(self) -> None:
+        path = filedialog.asksaveasfilename(
+            defaultextension=".csv",
+            filetypes=[("CSV 文件", "*.csv")],
+            initialfile="skills.csv"
+        )
+        if path:
+            try:
+                self.manager.export_csv(path)
+                self.set_status(f"技能数据已导出到 {path}")
+            except Exception as e:
+                messagebox.showerror("导出失败", str(e))
+
+    def _import_csv(self) -> None:
+        path = filedialog.askopenfilename(
+            filetypes=[("CSV 文件", "*.csv")]
+        )
+        if path:
+            CSVPreviewDialog(self, path, on_confirm=self._do_import_csv)
+
+    def _do_import_csv(self, path: str) -> None:
+        try:
+            result = self.manager.import_csv(path)
+            self.refresh()
+            msg = f"导入完成：成功 {result['success']} 条"
+            if result["failed"]:
+                msg += f"，失败 {result['failed']} 条"
+            self.set_status(msg)
+        except Exception as e:
+            messagebox.showerror("导入失败", str(e))

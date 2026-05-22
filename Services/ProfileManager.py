@@ -1,5 +1,6 @@
 """个人档案管理业务逻辑。"""
 
+import csv
 import json
 import os
 from datetime import datetime
@@ -83,3 +84,13 @@ class ProfileManager:
             "total": len(fields),
             "last_updated": profile.updated_at or "从未更新",
         }
+
+    def export_csv(self, path: str) -> None:
+        """导出档案为 CSV 文件（单行，字段为列）。"""
+        profile = self.get_profile()
+        fields = ["name", "gender", "birthday", "phone", "email",
+                  "address", "wechat", "qq", "github", "blog", "bio"]
+        with open(path, "w", newline="", encoding="utf-8-sig") as f:
+            writer = csv.writer(f)
+            writer.writerow(fields)
+            writer.writerow([getattr(profile, f, "") for f in fields])

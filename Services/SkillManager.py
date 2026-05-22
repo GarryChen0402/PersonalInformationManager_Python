@@ -1,5 +1,8 @@
 """技能管理业务逻辑。"""
 
+import csv
+import os
+
 import Core.Config as Config
 from Core.Exceptions import ValidationError
 from Core.Storage import JSONFileStorage
@@ -122,3 +125,39 @@ class SkillManager:
             "total_hours": total_hours,
             "avg_level": round(total_level / total, 1),
         }
+
+    # ---- CSV 导入导出 ----
+
+    def export_csv(self, path: str) -> None:
+        """导出技能数据为 CSV 文件。"""
+        skills = self.get_all()
+        with open(path, "w", newline="", encoding="utf-8-sig") as f:
+            writer = csv.writer(f)
+            writer.writerow(["名称", "类别", "熟练度", "学习时长", "描述", "创建时间"])
+            for s in skills:
+                writer.writerow([s.name, s.category, s.level,
+                                s.hours_spent, s.description, s.created_at])
+
+    def import_csv(self, path: str) -> dict:
+        """从 CSV 导入技能。返回 {success, failed, errors}。"""
+        result = {"success": 0, "failed": 0, "errors": []}
+        with open(path, "r", encoding="utf-8-sig") as f:
+            reader = csv.DictReader(f)
+            for i, row in enumerate(reader, start=2):
+                try:
+                    name = row.get("名称", "").strip()
+                    if not name:
+                        raise ValidationError("名称为空")
+                    level = int(row.get("熟练度", 1))
+                    hours = float(row.get("学习时长", 0))
+                    self.add_skill(
+                        name=name,
+                        category=row.get("类别", "其他").strip(),
+                        level=level, hours_spent=hours,
+                        description=row.get("描述", "").strip(),
+                    )
+                    result["success"] += 1
+                except Exception as e:
+                    result["failed"] += 1
+                    result["errors"].append(f"第{i}行: {e}")
+        return result
