@@ -30,7 +30,6 @@ class TodoItem:
     def is_overdue(self) -> bool:
         if self.completed or not self.due_date:
             return False
-        from datetime import datetime
         try:
             today = datetime.now().strftime("%Y-%m-%d")
             return self.due_date < today

@@ -361,7 +361,6 @@ class App:
     def _do_global_search(self, keyword: str) -> list[SearchResult]:
         """跨模块搜索，聚合结果（每模块最多 8 条，总计最多 20 条）。"""
         results: list[SearchResult] = []
-        kw = keyword.lower()
 
         # 技能
         for s in self._search_managers["skill"].search(keyword):

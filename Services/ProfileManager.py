@@ -53,7 +53,7 @@ class ProfileManager:
             data["created_at"] = _now()
 
         # 只更新 Profile 中存在的字段
-        valid_fields = {f.name for f in Profile.__dataclass_fields__.values()}  # noqa: F821
+        valid_fields = {f.name for f in Profile.__dataclass_fields__.values()}
         for key, value in kwargs.items():
             if key in valid_fields:
                 data[key] = value

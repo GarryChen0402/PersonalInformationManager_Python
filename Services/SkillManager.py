@@ -1,7 +1,6 @@
 """技能管理业务逻辑。"""
 
 import csv
-import os
 
 import Core.Config as Config
 from Core.Exceptions import ValidationError

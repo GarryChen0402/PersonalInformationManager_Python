@@ -107,8 +107,6 @@ class StatusManager:
         if not records:
             return {"mood": 0, "energy": 0, "focus": 0, "sleep_hours": 0, "count": 0}
 
-        today = datetime.now().strftime("%Y-%m-%d")
-
         if period == "week":
             cutoff = (datetime.now() - timedelta(days=7)).strftime("%Y-%m-%d")
             filtered = [r for r in records if r.date >= cutoff]
