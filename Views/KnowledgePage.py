@@ -51,6 +51,15 @@ class KnowledgePage(tk.Frame):
         if hasattr(tab, "refresh"):
             tab.refresh()
 
+    def highlight_item(self, item_id: str, item_type: str = "note") -> None:
+        """定位并高亮指定条目（支持 note/ebook 子类型）。"""
+        if item_type == "ebook":
+            self.notebook.select(self.ebook_tab)
+            self.ebook_tab.highlight_item(item_id)
+        else:
+            self.notebook.select(self.note_tab)
+            self.note_tab.highlight_item(item_id)
+
 
 # ============================================================
 #  NoteTabView — 文本笔记
@@ -353,6 +362,14 @@ class NoteTabView(tk.Frame):
                 n.updated_at[:10] if n.updated_at else n.created_at[:10],
             ))
 
+    def highlight_item(self, item_id: str) -> None:
+        """定位并高亮指定笔记条目。"""
+        if not self.note_tree.exists(item_id):
+            return
+        self.note_tree.selection_set(item_id)
+        self.note_tree.see(item_id)
+        self.note_tree.focus(item_id)
+
     def _update_stats(self) -> None:
         stats = self.manager.get_statistics()
         cats = ", ".join(f"{k}:{v}" for k, v in stats["by_category"].items())
@@ -579,6 +596,14 @@ class EbookTabView(tk.Frame):
             messagebox.showinfo("提示", "请先选中一本电子书")
             return None
         return self.manager.get_by_id(selection[0])
+
+    def highlight_item(self, item_id: str) -> None:
+        """定位并高亮指定电子书条目。"""
+        if not self.tree.exists(item_id):
+            return
+        self.tree.selection_set(item_id)
+        self.tree.see(item_id)
+        self.tree.focus(item_id)
 
 
 # ============================================================

@@ -438,3 +438,11 @@ class PasswordPage(tk.Frame):
             messagebox.showinfo("提示", "请先选中一条记录")
             return None
         return self.manager.get_by_id(selection[0])
+
+    def highlight_item(self, item_id: str) -> None:
+        """定位并高亮指定条目。"""
+        if not self.tree.exists(item_id):
+            return
+        self.tree.selection_set(item_id)
+        self.tree.see(item_id)
+        self.tree.focus(item_id)

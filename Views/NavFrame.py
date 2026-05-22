@@ -3,9 +3,11 @@
 import tkinter as tk
 from typing import Callable
 
+from .GlobalSearchBar import GlobalSearchBar, SearchResult
+
 
 class NavFrame(tk.Frame):
-    """左侧导航栏，包含各功能模块的切换按钮。"""
+    """左侧导航栏，包含全局搜索和各功能模块的切换按钮。"""
 
     NAV_ITEMS = [
         ("profile", "个人档案"),
@@ -19,7 +21,9 @@ class NavFrame(tk.Frame):
     ]
 
     def __init__(self, parent: tk.Widget, on_select: Callable[[str], None],
-                 theme: dict | None = None):
+                 theme: dict | None = None,
+                 on_search: Callable[[str], list[SearchResult]] | None = None,
+                 on_navigate: Callable[[str, str], None] | None = None):
         self._theme = theme or {
             "nav_bg": "#f0f0f0", "nav_active": "#4a90d9",
             "fg": "#333333", "bg": "#f0f0f0",
@@ -29,12 +33,23 @@ class NavFrame(tk.Frame):
         self.pack_propagate(False)
 
         self.on_select = on_select
+        self.on_navigate = on_navigate
         self.buttons: dict[str, tk.Button] = {}
 
-        self._build()
+        self._build(on_search)
 
-    def _build(self) -> None:
+    def _build(self, on_search) -> None:
         t = self._theme
+
+        # 全局搜索栏
+        if on_search and self.on_navigate:
+            self.search_bar = GlobalSearchBar(
+                self, on_search=on_search, on_navigate=self._on_search_navigate
+            )
+            self.search_bar.pack(fill=tk.X)
+        else:
+            self.search_bar = None
+
         header = tk.Label(
             self, text="导航菜单", bg=t["nav_bg"],
             font=("Microsoft YaHei", 10, "bold"), pady=10,
@@ -57,6 +72,11 @@ class NavFrame(tk.Frame):
     def _on_click(self, page_name: str) -> None:
         self.set_active(page_name)
         self.on_select(page_name)
+
+    def _on_search_navigate(self, module: str, item_id: str) -> None:
+        """全局搜索结果导航。"""
+        if self.on_navigate:
+            self.on_navigate(module, item_id)
 
     def set_active(self, page_name: str) -> None:
         """高亮指定导航按钮，取消其他按钮高亮。"""

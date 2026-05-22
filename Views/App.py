@@ -12,9 +12,14 @@ from .KnowledgePage import KnowledgePage
 from .PasswordPage import PasswordPage
 from .BackupPage import BackupPage
 from .TodoPage import TodoPage
+from .GlobalSearchBar import SearchResult
 from Services.ConfigManager import ConfigManager
 from Services.CryptoService import CryptoService
 from Services.PasswordManager import PasswordManager
+from Services.SkillManager import SkillManager
+from Services.StatusManager import StatusManager
+from Services.KnowledgeManager import KnowledgeManager
+from Services.TodoManager import TodoManager
 
 
 # ---- 配色主题 ----
@@ -90,8 +95,21 @@ class App:
         )
         version_label.pack(side=tk.RIGHT)
 
+        # 搜索管理器
+        self._search_managers = {
+            "skill": SkillManager(),
+            "status": StatusManager(),
+            "knowledge": KnowledgeManager(),
+            "todo": TodoManager(),
+            "password": PasswordManager(),
+        }
+
         # 左侧导航栏
-        self.nav = NavFrame(self.root, on_select=self._switch_page, theme=self.theme)
+        self.nav = NavFrame(
+            self.root, on_select=self._switch_page, theme=self.theme,
+            on_search=self._do_global_search,
+            on_navigate=self._on_global_navigate,
+        )
 
         # 右侧内容区
         self.content = tk.Frame(self.root, bg=self.theme["bg"])
@@ -334,6 +352,76 @@ class App:
                 page.refresh()
             self.config_manager.set_last_active_module(page_name)
 
+    # ---- 全局搜索 ----
+
+    def _do_global_search(self, keyword: str) -> list[SearchResult]:
+        """跨模块搜索，聚合结果（每模块最多 8 条，总计最多 20 条）。"""
+        results: list[SearchResult] = []
+        kw = keyword.lower()
+
+        # 技能
+        for s in self._search_managers["skill"].search(keyword):
+            results.append(SearchResult(
+                name=s.name, module="skill", item_id=s.id,
+                snippet=f"{s.category}  Lv{s.level}"
+            ))
+
+        # 知识（笔记 + 电子书）
+        for item in self._search_managers["knowledge"].search(keyword):
+            if item.item_type == "note":
+                results.append(SearchResult(
+                    name=item.title, module="note", item_id=item.id,
+                    snippet=item.category
+                ))
+            elif item.item_type == "ebook":
+                results.append(SearchResult(
+                    name=item.title, module="ebook", item_id=item.id,
+                    snippet=item.category
+                ))
+
+        # 待办
+        for t in self._search_managers["todo"].search(keyword):
+            priority = {"high": "高", "mid": "中", "low": "低"}.get(t.priority, "")
+            results.append(SearchResult(
+                name=t.title, module="todo", item_id=t.id,
+                snippet=f"{priority}优先级" if priority else ""
+            ))
+
+        # 密码（不搜索密码内容，仅搜索平台/账号）
+        for p in self._search_managers["password"].search(keyword):
+            results.append(SearchResult(
+                name=p.platform, module="password", item_id=p.id,
+                snippet=p.username
+            ))
+
+        # 状态（搜索备注）
+        for s in self._search_managers["status"].get_all():
+            if kw in s.note.lower() or kw in s.date:
+                results.append(SearchResult(
+                    name=s.date, module="status", item_id=s.id,
+                    snippet=f"心情{s.mood} 精力{s.energy}" if s.note else s.note[:16]
+                ))
+
+        return results[:20]
+
+    def _on_global_navigate(self, module: str, item_id: str) -> None:
+        """搜索结果导航：切换到目标页面并高亮条目。"""
+        nav_map = {
+            "skill": "skill", "note": "knowledge", "ebook": "knowledge",
+            "todo": "todo", "password": "password", "status": "status",
+        }
+        page_name = nav_map.get(module, module)
+        self._switch_page(page_name)
+        self.nav.set_active(page_name)
+
+        page = self.pages.get(page_name)
+        if page and hasattr(page, "highlight_item"):
+            # 对于知识页面，传递子类型
+            if page_name == "knowledge":
+                page.highlight_item(item_id, module)
+            else:
+                page.highlight_item(item_id)
+
     # ---- 状态栏 ----
 
     def set_status(self, message: str) -> None:
@@ -357,7 +445,8 @@ class App:
     def _bind_shortcuts(self) -> None:
         """绑定全局键盘快捷键。"""
         self.root.bind("<Control-t>", lambda e: self._toggle_theme())
-        # Ctrl+1~7 快速切换导航
+        self.root.bind("<Control-Shift-F>", lambda e: self._focus_search())
+        # Ctrl+1~8 快速切换导航
         nav_order = ["profile", "status", "skill", "knowledge", "todo", "password", "backup", "dashboard"]
         for i, name in enumerate(nav_order):
             self.root.bind(f"<Control-Key-{i + 1}>", lambda e, n=name: self._navigate(n))
@@ -366,6 +455,11 @@ class App:
         """导航到指定页面。"""
         self._switch_page(page_name)
         self.nav.set_active(page_name)
+
+    def _focus_search(self) -> None:
+        """聚焦全局搜索框。"""
+        if self.nav.search_bar:
+            self.nav.search_bar.focus()
 
     # ---- 关闭 ----
 
