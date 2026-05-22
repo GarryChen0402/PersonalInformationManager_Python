@@ -11,6 +11,7 @@ from .StatusPage import StatusPage
 from .KnowledgePage import KnowledgePage
 from .PasswordPage import PasswordPage
 from .BackupPage import BackupPage
+from .TodoPage import TodoPage
 from Services.ConfigManager import ConfigManager
 from Services.CryptoService import CryptoService
 from Services.PasswordManager import PasswordManager
@@ -312,6 +313,7 @@ class App:
         self.pages["skill"] = SkillPage(self.content, self.set_status)
         self.pages["status"] = StatusPage(self.content, self.set_status)
         self.pages["knowledge"] = KnowledgePage(self.content, self.set_status)
+        self.pages["todo"] = TodoPage(self.content, self.set_status)
         self.pages["password"] = PasswordPage(self.content, self.set_status)
         self.pages["backup"] = BackupPage(self.content, self.set_status)
 
@@ -356,7 +358,7 @@ class App:
         """绑定全局键盘快捷键。"""
         self.root.bind("<Control-t>", lambda e: self._toggle_theme())
         # Ctrl+1~7 快速切换导航
-        nav_order = ["profile", "status", "skill", "knowledge", "password", "backup", "dashboard"]
+        nav_order = ["profile", "status", "skill", "knowledge", "todo", "password", "backup", "dashboard"]
         for i, name in enumerate(nav_order):
             self.root.bind(f"<Control-Key-{i + 1}>", lambda e, n=name: self._navigate(n))
 

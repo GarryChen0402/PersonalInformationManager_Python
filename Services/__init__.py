@@ -6,3 +6,4 @@ from .PasswordManager import PasswordManager
 from .BackupManager import BackupManager
 from .ConfigManager import ConfigManager
 from .CryptoService import CryptoService
+from .TodoManager import TodoManager

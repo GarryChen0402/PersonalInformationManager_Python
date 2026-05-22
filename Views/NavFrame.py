@@ -12,6 +12,7 @@ class NavFrame(tk.Frame):
         ("status", "状态管理"),
         ("skill", "技能管理"),
         ("knowledge", "知识管理"),
+        ("todo", "待办事项"),
         ("password", "密码管理"),
         ("backup", "数据管理"),
         ("dashboard", "数据概览"),
