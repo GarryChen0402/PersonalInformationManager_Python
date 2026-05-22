@@ -64,10 +64,8 @@ class App:
         self.theme = THEMES.get(theme_name, LIGHT_THEME)
         self.root.configure(bg=self.theme["bg"])
 
-        # 主密码处理
-        self._handle_master_password()
-
-        # 底部状态栏
+        # 底部状态栏（必须在 _handle_master_password 之前创建，
+        # 因为解锁/设置对话框的回调会调用 set_status）
         bottom_frame = tk.Frame(
             self.root, bd=1, relief=tk.SUNKEN, bg=self.theme["status_bg"]
         )
@@ -80,6 +78,9 @@ class App:
             bg=self.theme["status_bg"], fg=self.theme["fg"]
         )
         self.status_bar.pack(side=tk.LEFT, fill=tk.X, expand=True)
+
+        # 主密码处理
+        self._handle_master_password()
 
         version_label = tk.Label(
             bottom_frame, text="v1.1  ",

@@ -9,6 +9,7 @@ from Services.StatusManager import StatusManager
 from Services.KnowledgeManager import KnowledgeManager
 from Services.PasswordManager import PasswordManager
 from Services.BackupManager import BackupManager
+from .ChartWidgets import MiniChart
 
 
 class DashboardPage(tk.Frame):
@@ -70,6 +71,8 @@ class DashboardPage(tk.Frame):
             "backup": BackupManager(),
         }
 
+        self._mini_charts: dict[str, MiniChart] = {}
+
         self._build_header()
         self._build_grid()
 
@@ -121,6 +124,13 @@ class DashboardPage(tk.Frame):
         title.pack(anchor=tk.W)
         title.bind("<Button-1>", lambda e, name=card_def["navigate"]: self.navigate(name))
 
+        # 迷你趋势图（状态卡片）
+        if card_def["id"] == "status":
+            mini = MiniChart(card, width=130, height=36)
+            mini.pack(anchor=tk.W, pady=(2, 4))
+            mini.bind("<Button-1>", lambda e, name=card_def["navigate"]: self.navigate(name))
+            self._mini_charts[card_def["id"]] = mini
+
         # 数据行
         self.card_data_labels: dict[str, list[tk.Label]] = {}
         lines = card_def["fetch"](self)
@@ -138,13 +148,28 @@ class DashboardPage(tk.Frame):
         return card
 
     def refresh(self) -> None:
-        """刷新所有卡片数据。"""
+        """刷新所有卡片数据和迷你图。"""
         for card_def in self.CARDS:
             lines = card_def["fetch"](self)
             labels = self.card_data_labels.get(card_def["id"], [])
             for i, line in enumerate(lines):
                 if i < len(labels):
                     labels[i].configure(text=line)
+
+        # 更新状态迷你图
+        self._update_status_mini_chart()
+
+    def _update_status_mini_chart(self) -> None:
+        """更新状态卡片的迷你趋势图。"""
+        mini = self._mini_charts.get("status")
+        if not mini:
+            return
+        records = self.managers["status"].get_latest(14)
+        if len(records) >= 2:
+            moods = [r.mood for r in reversed(records)]
+            mini.set_data(moods)
+        else:
+            mini.set_data([])
 
     # ---- 各模块信息获取 ----
 

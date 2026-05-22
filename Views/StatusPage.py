@@ -7,6 +7,7 @@ from datetime import datetime, timedelta
 from Services.StatusManager import StatusManager
 from Models.Status import StatusRecord
 from .Widgets import SearchBar, FormDialog, ConfirmDialog, DateRangePicker
+from .ChartWidgets import LineChart
 
 
 COLOR_TAGS = {
@@ -25,6 +26,7 @@ class StatusPage(tk.Frame):
         self.set_status = set_status
 
         self._build_toolbar()
+        self._build_chart()
         self._build_table()
         self._build_context_menu()
         self._build_stats_bar()
@@ -105,6 +107,65 @@ class StatusPage(tk.Frame):
             font=("Microsoft YaHei", 9), fg="#666666", pady=6
         )
         stats.pack(fill=tk.X, side=tk.BOTTOM)
+
+    # ---- 趋势图 ----
+
+    def _build_chart(self) -> None:
+        """构建趋势图区域。"""
+        chart_frame = tk.Frame(self, bg="#ffffff")
+        chart_frame.pack(fill=tk.X, padx=12, pady=(4, 0))
+
+        btn_frame = tk.Frame(chart_frame, bg="#ffffff")
+        btn_frame.pack(fill=tk.X, pady=(0, 2))
+
+        self._period_var = tk.StringVar(value="7")
+        self._period_btns: dict[str, tk.Button] = {}
+        for text, val in [("7天", "7"), ("30天", "30"), ("90天", "90")]:
+            btn = tk.Button(
+                btn_frame, text=text,
+                command=lambda v=val: self._on_period_change(v),
+                font=("Microsoft YaHei", 8), padx=10, cursor="hand2",
+                relief=tk.SUNKEN if val == "7" else tk.RAISED,
+                bg="#e0e0e0" if val == "7" else "#f0f0f0",
+            )
+            btn.pack(side=tk.LEFT, padx=1)
+            self._period_btns[val] = btn
+
+        self.line_chart = LineChart(chart_frame, height=200, title="")
+        self.line_chart.pack(fill=tk.X)
+
+    def _on_period_change(self, days: str) -> None:
+        """切换图表周期。"""
+        for v, btn in self._period_btns.items():
+            if v == days:
+                btn.configure(relief=tk.SUNKEN, bg="#e0e0e0")
+            else:
+                btn.configure(relief=tk.RAISED, bg="#f0f0f0")
+        self._load_chart_data(int(days))
+
+    def _load_chart_data(self, period_days: int) -> None:
+        """加载图表数据。"""
+        end = datetime.now()
+        start = end - timedelta(days=period_days)
+        records = self.manager.get_by_date_range(
+            start.strftime("%Y-%m-%d"), end.strftime("%Y-%m-%d")
+        )
+        records.sort(key=lambda r: r.date)
+
+        if not records:
+            self.line_chart.set_data([], {})
+            return
+
+        labels = [r.date[-5:] for r in records]
+        series = {
+            "心情": [r.mood for r in records],
+            "精力": [r.energy for r in records],
+            "专注度": [r.focus for r in records],
+        }
+        if any(r.sleep_hours > 0 for r in records):
+            series["睡眠"] = [r.sleep_hours for r in records]
+
+        self.line_chart.set_data(labels, series)
 
     # ---- 添加 ----
 
@@ -205,9 +266,11 @@ class StatusPage(tk.Frame):
     # ---- 数据加载 ----
 
     def refresh(self) -> None:
-        """重新加载状态记录和统计。"""
+        """重新加载状态记录、图表和统计。"""
         records = self.manager.get_latest(30)
         self._populate_tree(records)
+
+        self._load_chart_data(int(self._period_var.get()))
 
         # 设置默认日期范围
         end = datetime.now().strftime("%Y-%m-%d")

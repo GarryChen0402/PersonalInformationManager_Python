@@ -6,6 +6,7 @@ from tkinter import ttk, messagebox
 from Services.SkillManager import SkillManager
 from Models.Skill import Skill
 from .Widgets import SearchBar, FormDialog, ConfirmDialog
+from .ChartWidgets import RadarChart, BarChart
 
 
 class SkillPage(tk.Frame):
@@ -17,6 +18,7 @@ class SkillPage(tk.Frame):
         self.set_status = set_status
 
         self._build_toolbar()
+        self._build_charts()
         self._build_table()
         self._build_context_menu()
         self._build_stats_bar()
@@ -104,6 +106,49 @@ class SkillPage(tk.Frame):
             font=("Microsoft YaHei", 9), fg="#666666", pady=6
         )
         stats.pack(fill=tk.X, side=tk.BOTTOM)
+
+    # ---- 图表 ----
+
+    def _build_charts(self) -> None:
+        """构建技能图表区域（雷达图 + 柱状图并排）。"""
+        charts_frame = tk.Frame(self, bg="#ffffff")
+        charts_frame.pack(fill=tk.X, padx=12, pady=(4, 0))
+
+        left = tk.Frame(charts_frame, bg="#ffffff")
+        left.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 4))
+
+        self.radar_chart = RadarChart(left, width=280, height=260, title="技能分布")
+        self.radar_chart.pack()
+
+        right = tk.Frame(charts_frame, bg="#ffffff")
+        right.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(4, 0))
+
+        self.bar_chart = BarChart(right, width=280, height=260, title="类别分布")
+        self.bar_chart.pack()
+
+    def _load_chart_data(self) -> None:
+        """加载图表数据。"""
+        skills = self.manager.get_all()
+
+        # 雷达图：熟练度最高的前 6 项技能
+        top = skills[:6]
+        if top:
+            self.radar_chart.set_data(
+                [s.name for s in top],
+                [s.level for s in top],
+                max_val=5,
+            )
+        else:
+            self.radar_chart.set_data([], [])
+
+        # 柱状图：类别分布
+        stats = self.manager.get_statistics()
+        by_cat = stats.get("by_category", {})
+        if by_cat:
+            cats = sorted(by_cat.keys())
+            self.bar_chart.set_data(cats, [by_cat[c] for c in cats])
+        else:
+            self.bar_chart.set_data([], [])
 
     # ---- 添加 ----
 
@@ -199,9 +244,11 @@ class SkillPage(tk.Frame):
     # ---- 数据加载 ----
 
     def refresh(self) -> None:
-        """重新加载技能列表和筛选选项。"""
+        """重新加载技能列表、图表和筛选选项。"""
         skills = self.manager.get_all()
         self._populate_tree(skills)
+
+        self._load_chart_data()
 
         # 更新类别筛选
         categories = self.manager.get_all_categories()

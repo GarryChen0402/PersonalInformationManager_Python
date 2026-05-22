@@ -7,6 +7,7 @@ from tkinter import ttk, filedialog, messagebox
 from Services.KnowledgeManager import KnowledgeManager
 from Models.Knowledge import KnowledgeItem
 from .Widgets import SearchBar, FormDialog, ConfirmDialog, KeywordEntry
+from .ChartWidgets import BarChart
 
 
 def _format_size(size_bytes: int) -> str:
@@ -81,6 +82,10 @@ class NoteTabView(tk.Frame):
         paned.add(right, width=500, minsize=300)
 
         self._build_detail_panel(right)
+
+        # 类别分布图
+        self.note_bar_chart = BarChart(self, height=150, title="")
+        self.note_bar_chart.pack(fill=tk.X, padx=12, pady=(4, 0))
 
         # 底部统计
         self._build_stats_bar()
@@ -355,6 +360,18 @@ class NoteTabView(tk.Frame):
             f"共 {stats['total_notes']} 篇笔记"
             + (f"  |  {cats}" if cats else "")
         )
+
+        # 更新类别柱状图（仅笔记）
+        notes = self.manager.get_all(item_type="note")
+        by_cat: dict[str, int] = {}
+        for n in notes:
+            cat = n.category or "其他"
+            by_cat[cat] = by_cat.get(cat, 0) + 1
+        if by_cat:
+            sorted_cats = sorted(by_cat.keys())
+            self.note_bar_chart.set_data(sorted_cats, [by_cat[c] for c in sorted_cats])
+        else:
+            self.note_bar_chart.set_data([], [])
 
 
 # ============================================================
