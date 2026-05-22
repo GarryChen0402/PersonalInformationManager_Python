@@ -1,35 +1,35 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+本文件为 Claude Code (claude.ai/code) 在此仓库中工作时提供指导。
 
-## Project Overview
+## 项目概述
 
-Personal Information Manager (PIM) — a Python Tkinter GUI application for managing personal information. This is a Python learning project. Zero external dependencies beyond Python stdlib.
+个人信息管理器 (PIM) — 一个用于管理个人信息的 Python Tkinter GUI 应用程序。这是一个 Python 学习项目。除 Python 标准库外零外部依赖。
 
-## Architecture
+## 架构
 
-4-layer architecture: **View → Service → Model → Storage**
+4 层架构：**View → Service → Model → Storage**
 
-- **`main.py`** — Entry point. Calls `ensure_directories()` then launches Tkinter `App`.
-- **`Core/`** — Infrastructure: `Config.py` (path constants, `ensure_directories()`), `Storage.py` (JSONFileStorage base class with atomic writes), `Exceptions.py` (PIMException hierarchy).
-- **`Models/`** — Python `@dataclass` classes with `from_dict()`/`to_dict()` methods. Re-exported via `__init__.py`.
-- **`Services/`** — Business logic managers. Each references paths via `Config.SKILL_PATH` (module reference, not captured at import). Re-exported via `__init__.py`.
-- **`Views/`** — Tkinter GUI pages. `App.py` (main window + status bar), `NavFrame.py` (left nav 150px), per-module pages, `Widgets.py` (shared controls).
-- **`Data/`** — Auto-created data directories: `books/`, `backups/`, plus per-module JSON files.
-- **`Tests/`** — Unit and integration tests (100 tests, zero dependencies).
+- **`main.py`** — 入口点。调用 `ensure_directories()` 然后启动 Tkinter `App`。
+- **`Core/`** — 基础设施：`Config.py`（路径常量、`ensure_directories()`）、`Storage.py`（带原子写入的 JSONFileStorage 基类）、`Exceptions.py`（PIMException 层次结构）。
+- **`Models/`** — Python `@dataclass` 类，带有 `from_dict()`/`to_dict()` 方法。通过 `__init__.py` 重新导出。
+- **`Services/`** — 业务逻辑管理器。每个通过 `Config.SKILL_PATH`（模块引用，不在导入时捕获）引用路径。通过 `__init__.py` 重新导出。
+- **`Views/`** — Tkinter GUI 页面。`App.py`（主窗口 + 状态栏）、`NavFrame.py`（左侧导航 150px）、各模块页面、`Widgets.py`（共享控件）。
+- **`Data/`** — 自动创建的数据目录：`books/`、`backups/`，以及各模块的 JSON 文件。
+- **`Tests/`** — 单元测试和集成测试（100 个测试，零依赖）。
 
-## Key Patterns
+## 关键模式
 
-- **Zero dependencies** — stdlib only. No pip install required.
-- **JSON persistence** — `JSONFileStorage` base class provides CRUD, search, query. Atomic writes via tmp file + `os.replace()`. Auto UUID ids and timestamps.
-- **Path references** — All service managers import `Core.Config` as a module and reference `Config.SKILL_PATH` etc. dynamically (NOT captured at import time via `from Core.Config import SKILL_PATH`). This allows tests to redirect data paths by modifying `Config` attributes.
-- **Profile is singleton** — Stored as JSON object (not list). ProfileManager has its own `_load`/`_save` methods.
-- **Password encoding** — base64 encode/decode (not encryption, just obfuscation).
-- **PDF handling** — Header validation (`b"%PDF"` check), copied to `Data/books/` with UUID filename, opened via `os.startfile`/`subprocess`.
-- **Same-day status** — Adding a status record for an existing date auto-updates the existing record.
-- **GUI pattern** — Pages receive `set_status` callable (not raw Label). Page switching via `pack_forget()`/`pack()`. DashboardPage also receives `navigate` callback.
-- **Views/Widgets.py** — Shared widgets: SearchBar, FormDialog (Toplevel modal), ConfirmDialog, DateRangePicker, StatsBar, KeywordEntry (tag chips).
-- **Knowledge Model** — Single `KnowledgeItem` with `item_type` field ("note"/"ebook"). Unified category/keyword system.
-- **Backup** — Full JSON backup with per-module selective restore. BackupManager uses `_module_paths()` function (not module-level dict) to resolve paths dynamically.
-- **Tests** — Use temp directories. Redirect `Config.*` paths in `setUpClass`/`tearDownClass`. Call `os.remove()` in `setUp` for clean state.
-- **No setup.py, requirements.txt, or virtual environment** — run directly with `python main.py`.
+- **零依赖** — 仅使用标准库。无需 pip install。
+- **JSON 持久化** — `JSONFileStorage` 基类提供 CRUD、搜索、查询功能。通过临时文件 + `os.replace()` 实现原子写入。自动生成 UUID id 和时间戳。
+- **路径引用** — 所有服务管理器以模块方式导入 `Core.Config`，并动态引用 `Config.SKILL_PATH` 等（而非在导入时通过 `from Core.Config import SKILL_PATH` 捕获）。这使得测试可以通过修改 `Config` 属性来重定向数据路径。
+- **Profile 是单例** — 存储为 JSON 对象（非列表）。ProfileManager 有自己的 `_load`/`_save` 方法。
+- **密码编码** — base64 编码/解码（非加密，仅作混淆）。
+- **PDF 处理** — 头部验证（`b"%PDF"` 检查），以 UUID 文件名复制到 `Data/books/`，通过 `os.startfile`/`subprocess` 打开。
+- **同日状态** — 为已有日期添加状态记录会自动更新现有记录。
+- **GUI 模式** — 页面接收 `set_status` 可调用对象（非原始 Label）。通过 `pack_forget()`/`pack()` 切换页面。DashboardPage 还接收 `navigate` 回调。
+- **Views/Widgets.py** — 共享控件：SearchBar、FormDialog（Toplevel 模态框）、ConfirmDialog、DateRangePicker、StatsBar、KeywordEntry（标签芯片）。
+- **知识模型** — 单一的 `KnowledgeItem`，带有 `item_type` 字段（"note"/"ebook"）。统一的分类/关键词系统。
+- **备份** — 完整 JSON 备份，支持按模块选择性恢复。BackupManager 使用 `_module_paths()` 函数（非模块级字典）动态解析路径。
+- **测试** — 使用临时目录。在 `setUpClass`/`tearDownClass` 中重定向 `Config.*` 路径。在 `setUp` 中调用 `os.remove()` 以确保干净状态。
+- **无 setup.py、requirements.txt 或虚拟环境** — 直接通过 `python main.py` 运行。
