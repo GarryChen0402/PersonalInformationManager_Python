@@ -1,4 +1,4 @@
-"""密码管理业务逻辑 — base64 编解码。"""
+"""密码管理业务逻辑 — 流密码加密存储。"""
 
 import base64
 
@@ -6,21 +6,29 @@ import Core.Config as Config
 from Core.Exceptions import ValidationError
 from Core.Storage import JSONFileStorage
 from Models.Password import PasswordEntry
+from Services.CryptoService import CryptoService
 
 
 class PasswordManager:
-    """密码管理器，密码字段以 base64 编码存储。"""
+    """密码管理器，密码字段以流密码加密存储。"""
 
     def __init__(self):
         self.storage = JSONFileStorage(Config.PASSWORD_PATH)
 
     @staticmethod
-    def _encode(plain: str) -> str:
-        return base64.b64encode(plain.encode("utf-8")).decode()
+    def _is_base64_format(encoded: str) -> bool:
+        """检测密码是否为旧的 base64 格式。"""
+        try:
+            decoded = base64.b64decode(encoded.encode()).decode("utf-8")
+            return decoded.isprintable() or len(decoded) > 0
+        except Exception:
+            return False
 
-    @staticmethod
-    def _decode(encoded: str) -> str:
-        return base64.b64decode(encoded.encode()).decode("utf-8")
+    def _encode(self, plain: str) -> str:
+        return CryptoService.encrypt(plain)
+
+    def _decode(self, encoded: str) -> str:
+        return CryptoService.decrypt(encoded)
 
     # ---- 增 ----
 
@@ -96,3 +104,50 @@ class PasswordManager:
 
     def count(self) -> int:
         return self.storage.count()
+
+    # ---- 迁移 ----
+
+    def migrate_from_base64(self) -> int:
+        """将旧 base64 编码的密码迁移到新加密格式。返回迁移条目数。"""
+        records = self.storage.get_all()
+        migrated = 0
+        for record in records:
+            pwd = record.get("password", "")
+            if not pwd:
+                continue
+            if self._is_base64_format(pwd):
+                try:
+                    plain = base64.b64decode(pwd.encode()).decode("utf-8")
+                    record["password"] = self._encode(plain)
+                    migrated += 1
+                except Exception:
+                    continue
+
+        if migrated > 0:
+            self.storage._save(records)
+        return migrated
+
+    def re_encrypt_all(self, old_password: str) -> int:
+        """主密码变更后重新加密所有条目。返回重新加密的条目数。"""
+        records = self.storage.get_all()
+        count = 0
+        for record in records:
+            pwd = record.get("password", "")
+            if not pwd:
+                continue
+            # 用旧密码解密
+            cached = CryptoService._master_password
+            CryptoService._master_password = old_password
+            try:
+                plain = CryptoService.decrypt(pwd)
+                # 恢复当前主密码后重新加密
+                CryptoService._master_password = cached
+                record["password"] = self._encode(plain)
+                count += 1
+            except Exception:
+                CryptoService._master_password = cached
+                continue
+
+        if count > 0:
+            self.storage._save(records)
+        return count

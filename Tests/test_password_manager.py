@@ -7,6 +7,9 @@ import unittest
 import Core.Config as Config
 from Core.Exceptions import ValidationError
 from Services.PasswordManager import PasswordManager
+from Services.CryptoService import CryptoService
+
+_TEST_MASTER_PASSWORD = "testpass"
 
 
 class TestPasswordManager(unittest.TestCase):
@@ -14,18 +17,25 @@ class TestPasswordManager(unittest.TestCase):
     def setUpClass(cls):
         cls.tmpdir = tempfile.mkdtemp()
         cls.orig_path = Config.PASSWORD_PATH
+        cls.orig_config = Config.CONFIG_PATH
         Config.PASSWORD_PATH = os.path.join(cls.tmpdir, "passwords.json")
+        Config.CONFIG_PATH = os.path.join(cls.tmpdir, "config.json")
 
     @classmethod
     def tearDownClass(cls):
         Config.PASSWORD_PATH = cls.orig_path
+        Config.CONFIG_PATH = cls.orig_config
+        CryptoService.lock()
         for f in os.listdir(cls.tmpdir):
             os.unlink(os.path.join(cls.tmpdir, f))
         os.rmdir(cls.tmpdir)
 
     def setUp(self):
-        if os.path.exists(Config.PASSWORD_PATH):
-            os.remove(Config.PASSWORD_PATH)
+        for p in [Config.PASSWORD_PATH, Config.CONFIG_PATH]:
+            if os.path.exists(p):
+                os.remove(p)
+        # 设置主密码并解锁
+        CryptoService.setup_master_password(_TEST_MASTER_PASSWORD, _TEST_MASTER_PASSWORD)
         self.manager = PasswordManager()
 
     def test_encode_decode(self):
@@ -101,6 +111,53 @@ class TestPasswordManager(unittest.TestCase):
         self.manager.add_entry("A", "", "", "p")
         entries = self.manager.get_all()
         self.assertEqual(len(entries), 2)
+
+    def test_migrate_from_base64(self):
+        """验证旧 base64 格式迁移到新加密格式。"""
+        import base64
+        import json
+
+        # 手动创建旧格式数据
+        old_data = [
+            {
+                "id": "test-1",
+                "platform": "OldSite",
+                "url": "",
+                "username": "olduser",
+                "password": base64.b64encode(b"oldsecret").decode(),
+                "note": "",
+                "created_at": "2026-01-01 00:00:00",
+            }
+        ]
+        with open(Config.PASSWORD_PATH, "w", encoding="utf-8") as f:
+            json.dump(old_data, f, ensure_ascii=False, indent=2)
+
+        # 执行迁移
+        manager = PasswordManager()
+        count = manager.migrate_from_base64()
+        self.assertEqual(count, 1)
+
+        # 验证迁移后可以正确解密
+        entry = manager.get_all()[0]
+        decrypted = manager.get_decrypted_password(entry.id)
+        self.assertEqual(decrypted, "oldsecret")
+
+    def test_re_encrypt_all(self):
+        """验证主密码变更后重新加密所有条目。"""
+        self.manager.add_entry("Site1", "", "user1", "pass1")
+        self.manager.add_entry("Site2", "", "user2", "pass2")
+
+        # 变更主密码
+        CryptoService.change_master_password(_TEST_MASTER_PASSWORD, "newpass456")
+
+        # 用旧密码重新加密
+        manager2 = PasswordManager()
+        count = manager2.re_encrypt_all(old_password=_TEST_MASTER_PASSWORD)
+        self.assertEqual(count, 2)
+
+        # 验证新密码可解密
+        self.assertEqual(manager2.get_decrypted_password(
+            manager2.get_all()[0].id), "pass1")
 
 
 if __name__ == "__main__":

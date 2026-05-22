@@ -29,3 +29,8 @@ class ValidationError(PIMException):
 class BackupError(PIMException):
     """备份/恢复操作失败。"""
     pass
+
+
+class CryptoError(PIMException):
+    """加解密操作失败。"""
+    pass

@@ -22,6 +22,8 @@ STATUS_PATH = os.path.join(DATA_DIR, "status.json")
 SKILL_PATH = os.path.join(DATA_DIR, "skills.json")
 KNOWLEDGE_PATH = os.path.join(DATA_DIR, "knowledge.json")
 PASSWORD_PATH = os.path.join(DATA_DIR, "passwords.json")
+TODO_PATH = os.path.join(DATA_DIR, "todos.json")
+CONFIG_PATH = os.path.join(DATA_DIR, "config.json")
 
 
 def ensure_directories() -> None:

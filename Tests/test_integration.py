@@ -28,6 +28,8 @@ class TestIntegration(unittest.TestCase):
             "STATUS_PATH": Config.STATUS_PATH,
             "KNOWLEDGE_PATH": Config.KNOWLEDGE_PATH,
             "PASSWORD_PATH": Config.PASSWORD_PATH,
+            "CONFIG_PATH": Config.CONFIG_PATH,
+            "TODO_PATH": Config.TODO_PATH,
         }
         Config.DATA_DIR = os.path.join(cls.tmpdir, "Data")
         Config.BOOKS_DIR = os.path.join(Config.DATA_DIR, "books")
@@ -37,17 +39,21 @@ class TestIntegration(unittest.TestCase):
         Config.STATUS_PATH = os.path.join(Config.DATA_DIR, "status.json")
         Config.KNOWLEDGE_PATH = os.path.join(Config.DATA_DIR, "knowledge.json")
         Config.PASSWORD_PATH = os.path.join(Config.DATA_DIR, "passwords.json")
+        Config.CONFIG_PATH = os.path.join(Config.DATA_DIR, "config.json")
+        Config.TODO_PATH = os.path.join(Config.DATA_DIR, "todos.json")
 
     @classmethod
     def tearDownClass(cls):
         for k, v in cls._orig.items():
             setattr(Config, k, v)
+        from Services.CryptoService import CryptoService
+        CryptoService.lock()
         shutil.rmtree(cls.tmpdir, ignore_errors=True)
 
     def setUp(self):
         # 清理旧数据
         for p in [Config.PROFILE_PATH, Config.SKILL_PATH, Config.STATUS_PATH,
-                   Config.KNOWLEDGE_PATH, Config.PASSWORD_PATH]:
+                   Config.KNOWLEDGE_PATH, Config.PASSWORD_PATH, Config.CONFIG_PATH]:
             if os.path.exists(p):
                 os.remove(p)
         for d in [Config.BOOKS_DIR, Config.BACKUP_DIR]:
@@ -201,7 +207,9 @@ class TestIntegration(unittest.TestCase):
     def test_password_lifecycle(self):
         """密码：添加 → 查看明文 → 更新密码 → 搜索。"""
         from Services.PasswordManager import PasswordManager
+        from Services.CryptoService import CryptoService
 
+        CryptoService.setup_master_password("test", "test")
         pm = PasswordManager()
 
         e1 = pm.add_entry("GitHub", "github.com", "user1", "pass123")
@@ -236,6 +244,7 @@ class TestIntegration(unittest.TestCase):
         from Services.SkillManager import SkillManager
         from Services.PasswordManager import PasswordManager
         from Services.BackupManager import BackupManager
+        from Services.CryptoService import CryptoService
 
         # 创建初始数据
         pm = ProfileManager()
@@ -244,6 +253,7 @@ class TestIntegration(unittest.TestCase):
         sm = SkillManager()
         sm.add_skill("Go", "编程语言", 3, 50)
 
+        CryptoService.setup_master_password("test", "test")
         pwm = PasswordManager()
         pwm.add_entry("TestSite", "test.com", "admin", "backuppass")
 
@@ -348,6 +358,8 @@ class TestIntegration(unittest.TestCase):
         with self.assertRaises(ValidationError):
             stm.add_record("19-05-2026")
 
+        from Services.CryptoService import CryptoService
+        CryptoService.setup_master_password("test", "test")
         pwm = PasswordManager()
         with self.assertRaises(ValidationError):
             pwm.add_entry("", "", "", "pass")

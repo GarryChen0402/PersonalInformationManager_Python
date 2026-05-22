@@ -1,4 +1,8 @@
-.claude
-build/
-dist/
+__pycache__/
+*.pyc
+*.json
+/Data/
+/.claude/
+/build/
+/dist/
 *.spec
