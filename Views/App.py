@@ -103,13 +103,14 @@ class App:
         self.root.title("个人信息管理器 (PIM)")
         self.root.geometry("960x640")
         self.root.minsize(800, 500)
-        self._restore_window_geometry()
 
         # 字体缩放
         self._font_scale = 1.0
 
         # 加载配置
         self.config_manager = ConfigManager()
+
+        self._restore_window_geometry()
 
         # 应用主题
         theme_name = self.config_manager.get_theme()
