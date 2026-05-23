@@ -5,3 +5,5 @@ from .Knowledge import KnowledgeItem
 from .Password import PasswordEntry
 from .AppConfig import AppConfig
 from .TodoItem import TodoItem
+from .Habit import Habit
+from .HabitRecord import HabitRecord

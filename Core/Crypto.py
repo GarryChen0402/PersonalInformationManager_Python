@@ -170,7 +170,7 @@ class SimpleCrypto:
         except Exception as e:
             raise CryptoError("密文格式错误") from e
 
-        min_length = _SALT_LENGTH + _NONCE_LENGTH + 1 + _HMAC_LENGTH
+        min_length = _SALT_LENGTH + _NONCE_LENGTH + _HMAC_LENGTH
         if len(data) < min_length:
             raise CryptoError("密文数据不完整")
 
