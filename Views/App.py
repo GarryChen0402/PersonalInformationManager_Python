@@ -1,5 +1,6 @@
 """应用程序主窗口。"""
 
+import datetime
 import tkinter as tk
 from tkinter import font as tkfont
 from tkinter import messagebox
@@ -55,7 +56,43 @@ DARK_THEME = {
     "status_bg": "#252526",
 }
 
-THEMES = {"light": LIGHT_THEME, "dark": DARK_THEME}
+SOLARIZED_LIGHT = {
+    "bg": "#fdf6e3", "fg": "#657b83",
+    "toolbar_bg": "#eee8d5", "stats_bg": "#eee8d5",
+    "nav_bg": "#eee8d5", "nav_active": "#268bd2",
+    "button_bg": "#93a1a1", "card_bg": "#eee8d5",
+    "border": "#93a1a1", "status_bg": "#eee8d5",
+}
+
+SOLARIZED_DARK = {
+    "bg": "#002b36", "fg": "#839496",
+    "toolbar_bg": "#073642", "stats_bg": "#073642",
+    "nav_bg": "#073642", "nav_active": "#2aa198",
+    "button_bg": "#586e75", "card_bg": "#073642",
+    "border": "#586e75", "status_bg": "#073642",
+}
+
+NORD = {
+    "bg": "#2e3440", "fg": "#d8dee9",
+    "toolbar_bg": "#3b4252", "stats_bg": "#3b4252",
+    "nav_bg": "#3b4252", "nav_active": "#5e81ac",
+    "button_bg": "#4c566a", "card_bg": "#3b4252",
+    "border": "#4c566a", "status_bg": "#3b4252",
+}
+
+THEMES = {
+    "light": LIGHT_THEME, "dark": DARK_THEME,
+    "solarized_light": SOLARIZED_LIGHT,
+    "solarized_dark": SOLARIZED_DARK,
+    "nord": NORD,
+}
+THEME_NAMES = ["light", "dark", "solarized_light", "solarized_dark", "nord"]
+THEME_DISPLAY = {
+    "light": "浅色", "dark": "深色",
+    "solarized_light": "Solarized 浅色",
+    "solarized_dark": "Solarized 深色",
+    "nord": "Nord",
+}
 
 
 class App:
@@ -66,6 +103,7 @@ class App:
         self.root.title("个人信息管理器 (PIM)")
         self.root.geometry("960x640")
         self.root.minsize(800, 500)
+        self._restore_window_geometry()
 
         # 字体缩放
         self._font_scale = 1.0
@@ -102,6 +140,16 @@ class App:
             bg=self.theme["status_bg"], fg=self.theme["fg"]
         )
         version_label.pack(side=tk.RIGHT)
+
+        # 时钟
+        self.clock_var = tk.StringVar()
+        clock_label = tk.Label(
+            bottom_frame, textvariable=self.clock_var,
+            anchor=tk.E, padx=8, font=("Microsoft YaHei", 9),
+            bg=self.theme["status_bg"], fg=self.theme["fg"]
+        )
+        clock_label.pack(side=tk.RIGHT)
+        self._update_clock()
 
         # 搜索管理器
         self._search_managers = {
@@ -496,13 +544,18 @@ class App:
     # ---- 主题 ----
 
     def _toggle_theme(self) -> None:
-        """切换浅色/深色主题。"""
+        """循环切换 5 套主题。"""
         current = self.config_manager.get_theme()
-        new_theme = "dark" if current == "light" else "light"
+        try:
+            idx = THEME_NAMES.index(current)
+        except ValueError:
+            idx = 0
+        new_theme = THEME_NAMES[(idx + 1) % len(THEME_NAMES)]
         self.config_manager.set_theme(new_theme)
+        display = THEME_DISPLAY.get(new_theme, new_theme)
         messagebox.showinfo(
             "主题切换",
-            f"已切换到{'深色' if new_theme == 'dark' else '浅色'}主题。\n请重启程序以完全应用。"
+            f"已切换到「{display}」主题。\n请重启程序以完全应用。"
         )
 
     # ---- 快捷键 ----
@@ -588,9 +641,32 @@ class App:
     # ---- 关闭 ----
 
     def _on_close(self) -> None:
-        """关闭窗口确认。"""
+        """关闭窗口确认并保存几何。"""
         if messagebox.askyesno("确认退出", "确定要退出个人信息管理器吗？"):
+            self._save_window_geometry()
             self.root.destroy()
+
+    def _restore_window_geometry(self) -> None:
+        """恢复上次的窗口几何。"""
+        geo = self.config_manager.get_window_geometry()
+        if geo:
+            try:
+                self.root.geometry(geo)
+            except Exception:
+                pass
+
+    def _save_window_geometry(self) -> None:
+        """保存当前窗口几何。"""
+        try:
+            geo = self.root.geometry()
+            self.config_manager.set_window_geometry(geo)
+        except Exception:
+            pass
+
+    def _update_clock(self) -> None:
+        """每分钟更新状态栏时钟。"""
+        self.clock_var.set(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+        self.root.after(60000, self._update_clock)
 
     # ---- 启动 ----
 

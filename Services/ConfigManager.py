@@ -119,3 +119,17 @@ class ConfigManager:
         if "migration" in self._data:
             self._data["migration"]["password_pending"] = False
             self._save()
+
+    def get_window_geometry(self) -> str:
+        return self._data.get("window_geometry", "")
+
+    def set_window_geometry(self, geometry: str) -> None:
+        self._data["window_geometry"] = geometry
+        self._save()
+
+    def get_font_family(self) -> str:
+        return self._data.get("font_family", "Microsoft YaHei")
+
+    def set_font_family(self, family: str) -> None:
+        self._data["font_family"] = family
+        self._save()
