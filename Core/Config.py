@@ -23,6 +23,9 @@ SKILL_PATH = os.path.join(DATA_DIR, "skills.json")
 KNOWLEDGE_PATH = os.path.join(DATA_DIR, "knowledge.json")
 PASSWORD_PATH = os.path.join(DATA_DIR, "passwords.json")
 TODO_PATH = os.path.join(DATA_DIR, "todos.json")
+HABITS_PATH = os.path.join(DATA_DIR, "habits.json")
+HABIT_RECORDS_PATH = os.path.join(DATA_DIR, "habit_records.json")
+JOURNAL_PATH = os.path.join(DATA_DIR, "journal.json")
 CONFIG_PATH = os.path.join(DATA_DIR, "config.json")
 
 

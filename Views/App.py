@@ -93,7 +93,7 @@ class App:
         self._handle_master_password()
 
         version_label = tk.Label(
-            bottom_frame, text="v1.1  ",
+            bottom_frame, text="v1.2  ",
             anchor=tk.E, padx=8, font=("Microsoft YaHei", 9),
             bg=self.theme["status_bg"], fg=self.theme["fg"]
         )
@@ -193,12 +193,16 @@ class App:
 
         def do_unlock():
             pwd = pwd_var.get()
-            if CryptoService.unlock(pwd):
-                dialog.destroy()
-                self._check_password_migration()
-                self.set_status("主密码已解锁")
-            else:
-                error_var.set("主密码错误，请重试")
+            try:
+                if CryptoService.unlock(pwd):
+                    dialog.destroy()
+                    self._check_password_migration()
+                    self.set_status("主密码已解锁")
+                else:
+                    error_var.set("主密码错误，请重试")
+                    pwd_var.set("")
+            except Exception as ex:
+                error_var.set(str(ex))
                 pwd_var.set("")
 
         def do_skip():
@@ -284,6 +288,29 @@ class App:
         )
         error_label.pack(anchor=tk.W)
 
+        # 密码强度指示
+        strength_var = tk.StringVar(value="")
+        strength_label = tk.Label(
+            frame, textvariable=strength_var,
+            font=("Microsoft YaHei", 9)
+        )
+        strength_label.pack(anchor=tk.W, pady=(4, 0))
+
+        def on_pwd_change(*args):
+            pwd = pwd_var.get()
+            if not pwd:
+                strength_var.set("")
+                return
+            info = CryptoService.get_password_strength(pwd)
+            labels = {"weak": "弱", "fair": "一般", "medium": "中等",
+                       "strong": "强", "very_strong": "非常强"}
+            colors = {"weak": "red", "fair": "orange", "medium": "#cc9900",
+                       "strong": "green", "very_strong": "darkgreen"}
+            strength_var.set(f"密码强度：{labels.get(info['level'], info['level'])}")
+            strength_label.configure(fg=colors.get(info["level"], "gray"))
+
+        pwd_var.trace_add("write", on_pwd_change)
+
         btn_frame = tk.Frame(frame)
         btn_frame.pack(fill=tk.X, pady=(8, 0))
 
@@ -316,16 +343,26 @@ class App:
         self.root.wait_window(dialog)
 
     def _check_password_migration(self) -> None:
-        """检查并执行密码数据迁移（base64 → 加密）。"""
-        if self.config_manager.is_password_migration_pending():
-            try:
-                pm = PasswordManager()
+        """检查并执行密码数据迁移（base64 → v1 → v2）。"""
+        if not CryptoService.is_unlocked():
+            return
+        try:
+            pm = PasswordManager()
+            # 先迁移 base64
+            if self.config_manager.is_password_migration_pending():
                 count = pm.migrate_from_base64()
                 if count > 0:
                     self.config_manager.clear_password_migration_flag()
-                    self.set_status(f"密码数据迁移完成：{count} 条已升级为加密存储")
-            except Exception:
-                pass  # 迁移失败不阻塞启动
+                    self.set_status(f"密码数据迁移完成：{count} 条已升级加密")
+
+            # 再检查 v1→v2 迁移
+            status = pm.get_migration_status()
+            if status.get("needs_migration"):
+                v2_count = pm.migrate_to_v2()
+                if v2_count > 0:
+                    self.set_status(f"密码加密升级完成：{v2_count} 条已升级为 v2 格式（HMAC 认证）")
+        except Exception:
+            pass  # 迁移失败不阻塞启动
 
     # ---- 页面初始化 ----
 

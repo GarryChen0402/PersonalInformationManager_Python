@@ -5,6 +5,7 @@ import tempfile
 import unittest
 
 import Core.Config as Config
+from Core.Exceptions import CryptoError
 from Services.CryptoService import CryptoService
 
 
@@ -90,7 +91,7 @@ class TestCryptoService(unittest.TestCase):
         # Change master password
         CryptoService.lock()
         CryptoService.setup_master_password("newpass", "newpass")
-        with self.assertRaises(ValueError):
+        with self.assertRaises((ValueError, CryptoError)):
             CryptoService.decrypt(encrypted)
 
     def test_encrypt_without_unlock_raises(self):
@@ -107,7 +108,7 @@ class TestCryptoService(unittest.TestCase):
         self.assertTrue(CryptoService.is_unlocked())
 
         # Old encrypted data cannot be decrypted with new key
-        with self.assertRaises(ValueError):
+        with self.assertRaises((ValueError, CryptoError)):
             CryptoService.decrypt(encrypted)
 
     def test_change_wrong_old_password(self):

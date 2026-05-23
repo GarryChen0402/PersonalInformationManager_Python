@@ -32,35 +32,47 @@ class PasswordPage(BasePage):
     # ---- 工具栏 ----
 
     def _build_toolbar(self) -> None:
-        toolbar = tk.Frame(self, bg="#fafafa", pady=8)
-        toolbar.pack(fill=tk.X, padx=12, pady=(12, 0))
+        self._toolbar = tk.Frame(self, bg="#fafafa", pady=8)
+        self._toolbar.pack(fill=tk.X, padx=12, pady=(12, 0))
 
-        self.search_bar = SearchBar(toolbar, on_search=self._on_search)
+        self.search_bar = SearchBar(self._toolbar, on_search=self._on_search)
         self.search_bar.pack(side=tk.LEFT, padx=4)
 
         # 主密码设置/解锁按钮
-        self._update_master_pwd_btn(toolbar)
+        self._update_master_pwd_btn()
 
         add_btn = tk.Button(
-            toolbar, text="+ 添加密码", command=self._open_add_dialog,
+            self._toolbar, text="+ 添加密码", command=self._open_add_dialog,
             font=("Microsoft YaHei", 9), padx=12, cursor="hand2"
         )
         add_btn.pack(side=tk.RIGHT, padx=4)
 
     def _update_master_pwd_btn(self, toolbar: tk.Frame | None = None) -> None:
         """根据主密码状态更新工具栏按钮。"""
+        # 从 self 获取 toolbar 引用
         if toolbar is None:
-            return
+            if hasattr(self, "_toolbar"):
+                toolbar = self._toolbar
+            else:
+                return
+
         # 移除旧按钮（如果存在）
-        if hasattr(self, "master_pwd_btn"):
+        if hasattr(self, "master_pwd_btn") and self.master_pwd_btn is not None:
             self.master_pwd_btn.destroy()
 
-        if not CryptoService.is_configured():
+        status = CryptoService.get_lock_status()
+        if not status["is_configured"]:
             text = "设置主密码"
             cmd = self._show_setup_dialog
-        elif not CryptoService.is_unlocked():
-            text = "解锁主密码"
-            cmd = self._show_unlock_dialog
+        elif status["is_locked"]:
+            cooldown = status.get("cooldown_remaining", 0)
+            if cooldown > 0:
+                text = f"已锁定({cooldown}s)"
+                cmd = lambda: messagebox.showinfo("已锁定",
+                      f"连续错误次数过多，请 {cooldown} 秒后重试")
+            else:
+                text = "解锁主密码"
+                cmd = self._show_unlock_dialog
         else:
             text = "已解锁"
             cmd = lambda: messagebox.showinfo("主密码", "主密码已解锁，密码功能可用。")
@@ -162,6 +174,29 @@ class PasswordPage(BasePage):
         )
         error_label.pack(anchor=tk.W)
 
+        # 密码强度指示
+        strength_var = tk.StringVar(value="")
+        strength_label = tk.Label(
+            frame, textvariable=strength_var,
+            font=("Microsoft YaHei", 9)
+        )
+        strength_label.pack(anchor=tk.W, pady=(4, 0))
+
+        def on_pwd_change(*args):
+            pwd = pwd_var.get()
+            if not pwd:
+                strength_var.set("")
+                return
+            info = CryptoService.get_password_strength(pwd)
+            labels = {"weak": "弱", "fair": "一般", "medium": "中等",
+                       "strong": "强", "very_strong": "非常强"}
+            colors = {"weak": "red", "fair": "orange", "medium": "#cc9900",
+                       "strong": "green", "very_strong": "darkgreen"}
+            strength_var.set(f"密码强度：{labels.get(info['level'], info['level'])}")
+            strength_label.configure(fg=colors.get(info["level"], "gray"))
+
+        pwd_var.trace_add("write", on_pwd_change)
+
         btn_frame = tk.Frame(frame)
         btn_frame.pack(fill=tk.X, pady=(8, 0))
 
@@ -174,9 +209,12 @@ class PasswordPage(BasePage):
                 self._update_master_pwd_btn()
                 self.set_status("主密码已设置，密码数据已加密保护")
                 # 检查是否有待迁移的旧密码
-                pending = self.manager.migrate_from_base64()
-                if pending > 0:
-                    self.set_status(f"主密码已设置，{pending} 条旧密码已升级加密")
+                base64_count = self.manager.migrate_from_base64()
+                v2_count = self.manager.migrate_to_v2()
+                total = base64_count + v2_count
+                if total > 0:
+                    self.set_status(f"主密码已设置，{total} 条密码已升级加密")
+                self.refresh()
             except ValueError as e:
                 error_var.set(str(e))
 
@@ -234,13 +272,26 @@ class PasswordPage(BasePage):
 
         def do_unlock():
             pwd = pwd_var.get()
-            if CryptoService.unlock(pwd):
-                dialog.destroy()
-                self._update_master_pwd_btn()
-                self.set_status("主密码已解锁")
-            else:
-                error_var.set("主密码错误，请重试")
+            try:
+                if CryptoService.unlock(pwd):
+                    dialog.destroy()
+                    self._update_master_pwd_btn()
+                    self.set_status("主密码已解锁")
+                    # 检查密码格式迁移
+                    status = self.manager.get_migration_status()
+                    if status.get("needs_migration"):
+                        v2_count = self.manager.migrate_to_v2()
+                        if v2_count > 0:
+                            self.set_status(f"主密码已解锁，{v2_count} 条密码已升级为 v2 格式")
+                    self.refresh()
+                else:
+                    error_var.set("主密码错误，请重试")
+                    pwd_var.set("")
+            except Exception as ex:
+                error_var.set(str(ex))
                 pwd_var.set("")
+                # 更新按钮状态（可能进入冷却期）
+                self._update_master_pwd_btn()
 
         cancel_btn = tk.Button(
             btn_frame, text="取消", command=dialog.destroy,
