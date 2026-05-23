@@ -196,3 +196,50 @@ class TodoManager:
                     result["failed"] += 1
                     result["errors"].append(f"第{i}行: {e}")
         return result
+
+    # ---- iCalendar 导出 ----
+
+    def export_icalendar(self, output_path: str, todo_ids: list[str] | None = None) -> str:
+        """导出待办为 .ics 文件（RFC 5545）。"""
+        todos = self.get_all_sorted()
+        if todo_ids:
+            id_set = set(todo_ids)
+            todos = [t for t in todos if t.id in id_set]
+
+        lines = [
+            "BEGIN:VCALENDAR",
+            "VERSION:2.0",
+            "PRODID:-//PIM//PersonalInformationManager//CN",
+            "X-WR-CALNAME:PIM 待办事项",
+        ]
+
+        priority_map = {"high": 1, "mid": 5, "low": 9}
+
+        for todo in todos:
+            lines.append("BEGIN:VTODO")
+            lines.append(f"UID:{todo.id}")
+            lines.append(f"SUMMARY:{self._escape_ical(todo.title)}")
+            if todo.description:
+                lines.append(f"DESCRIPTION:{self._escape_ical(todo.description)}")
+            lines.append(f"PRIORITY:{priority_map.get(todo.priority, 5)}")
+            if todo.due_date:
+                lines.append(f"DUE;VALUE=DATE:{todo.due_date.replace('-', '')}")
+            status = "COMPLETED" if todo.completed else "NEEDS-ACTION"
+            lines.append(f"STATUS:{status}")
+            if todo.category:
+                lines.append(f"CATEGORIES:{self._escape_ical(todo.category)}")
+            if todo.completed and todo.completed_at:
+                lines.append(f"COMPLETED:{todo.completed_at.replace('-', '').replace(':', '').replace(' ', 'T')}")
+            lines.append("END:VTODO")
+
+        lines.append("END:VCALENDAR")
+
+        content = "\r\n".join(lines)
+        with open(output_path, "w", encoding="utf-8") as f:
+            f.write(content)
+        return output_path
+
+    @staticmethod
+    def _escape_ical(text: str) -> str:
+        """转义 iCalendar 文本中的特殊字符。"""
+        return text.replace("\\", "\\\\").replace(";", "\\;").replace(",", "\\,").replace("\n", "\\n")

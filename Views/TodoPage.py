@@ -85,6 +85,12 @@ class TodoPage(BasePage):
         )
         export_btn.pack(side=tk.RIGHT, padx=4)
 
+        ical_btn = tk.Button(
+            toolbar, text="导出iCal", command=self._export_icalendar,
+            font=("Microsoft YaHei", 9), padx=12, cursor="hand2"
+        )
+        ical_btn.pack(side=tk.RIGHT, padx=4)
+
         add_btn = tk.Button(
             toolbar, text="+ 添加待办", command=self._open_add_dialog,
             font=("Microsoft YaHei", 9), padx=12, cursor="hand2"
@@ -330,6 +336,19 @@ class TodoPage(BasePage):
             try:
                 self.manager.export_csv(path)
                 self.set_status(f"待办数据已导出到 {path}")
+            except Exception as e:
+                messagebox.showerror("导出失败", str(e))
+
+    def _export_icalendar(self) -> None:
+        path = filedialog.asksaveasfilename(
+            defaultextension=".ics",
+            filetypes=[("iCalendar 文件", "*.ics")],
+            initialfile="todos.ics"
+        )
+        if path:
+            try:
+                self.manager.export_icalendar(path)
+                self.set_status(f"待办已导出为 iCalendar 至 {path}")
             except Exception as e:
                 messagebox.showerror("导出失败", str(e))
 

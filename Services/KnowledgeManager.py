@@ -235,3 +235,28 @@ class KnowledgeManager:
             for n in notes:
                 writer.writerow([n.title, n.category,
                                 " ".join(n.keywords), n.content, n.created_at])
+
+    # ---- Markdown 导出 ----
+
+    def export_note_markdown(self, note_id: str, output_path: str) -> str:
+        """导出单篇笔记为 Markdown 文件。"""
+        item = self.get_by_id(note_id)
+        if not item:
+            raise ValidationError("笔记不存在")
+
+        lines = [
+            "---",
+            f"title: \"{item.title}\"",
+            f"category: {item.category}",
+            f"keywords: [{', '.join(item.keywords)}]",
+            f"created_at: {item.created_at}",
+            f"updated_at: {item.updated_at}",
+            "---",
+            "",
+            f"# {item.title}",
+            "",
+            item.content,
+        ]
+        with open(output_path, "w", encoding="utf-8") as f:
+            f.write("\n".join(lines))
+        return output_path

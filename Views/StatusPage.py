@@ -8,7 +8,7 @@ from Services.StatusManager import StatusManager
 from Models.Status import StatusRecord
 from .BasePage import BasePage
 from .Widgets import SearchBar, FormDialog, ConfirmDialog, DateRangePicker
-from .ChartWidgets import LineChart
+from .ChartWidgets import LineChart, CalendarHeatmap
 
 
 COLOR_TAGS = {
@@ -118,6 +118,38 @@ class StatusPage(BasePage):
         self.line_chart = LineChart(chart_frame, height=200, title="")
         self.line_chart.pack(fill=tk.X)
 
+        # 热力图切换按钮
+        heatmap_toggle_frame = tk.Frame(chart_frame, bg="#ffffff")
+        heatmap_toggle_frame.pack(fill=tk.X, pady=(4, 0))
+
+        self._heatmap_metric = tk.StringVar(value="mood")
+        for text, val in [("心情", "mood"), ("精力", "energy"),
+                           ("专注", "focus"), ("睡眠", "sleep")]:
+            btn = tk.Button(
+                heatmap_toggle_frame, text=text,
+                command=lambda v=val: self._on_heatmap_metric_change(v),
+                font=("Microsoft YaHei", 8), padx=8, cursor="hand2",
+                relief=tk.SUNKEN if val == "mood" else tk.RAISED,
+                bg="#e0e0e0" if val == "mood" else "#f0f0f0",
+            )
+            btn.pack(side=tk.LEFT, padx=1)
+            setattr(self, f"_heatmap_btn_{val}", btn)
+
+        self.heatmap = CalendarHeatmap(chart_frame, height=130)
+        self.heatmap.pack(fill=tk.X, pady=(4, 0))
+
+    def _on_heatmap_metric_change(self, metric: str) -> None:
+        """切换热力图指标。"""
+        for v in ("mood", "energy", "focus", "sleep"):
+            btn = getattr(self, f"_heatmap_btn_{v}", None)
+            if btn:
+                if v == metric:
+                    btn.configure(relief=tk.SUNKEN, bg="#e0e0e0")
+                else:
+                    btn.configure(relief=tk.RAISED, bg="#f0f0f0")
+        self._heatmap_metric.set(metric)
+        self._load_heatmap_data()
+
     def _on_period_change(self, days: str) -> None:
         """切换图表周期。"""
         for v, btn in self._period_btns.items():
@@ -126,6 +158,28 @@ class StatusPage(BasePage):
             else:
                 btn.configure(relief=tk.RAISED, bg="#f0f0f0")
         self._load_chart_data(int(days))
+
+    def _load_heatmap_data(self) -> None:
+        """加载热力图数据（年度）。"""
+        from datetime import datetime
+        year = datetime.now().year
+        start = f"{year}-01-01"
+        end = f"{year}-12-31"
+        records = self.manager.get_by_date_range(start, end)
+        metric = self._heatmap_metric.get()
+
+        data: dict[str, float] = {}
+        for r in records:
+            if metric == "mood":
+                data[r.date] = r.mood
+            elif metric == "energy":
+                data[r.date] = r.energy
+            elif metric == "focus":
+                data[r.date] = r.focus
+            elif metric == "sleep":
+                data[r.date] = r.sleep_hours
+
+        self.heatmap.set_data(data)
 
     def _load_chart_data(self, period_days: int) -> None:
         """加载图表数据。"""
@@ -255,6 +309,7 @@ class StatusPage(BasePage):
         self._populate_tree(records)
 
         self._load_chart_data(int(self._period_var.get()))
+        self._load_heatmap_data()
 
         # 设置默认日期范围
         end = datetime.now().strftime("%Y-%m-%d")

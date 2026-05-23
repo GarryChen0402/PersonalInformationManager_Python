@@ -556,6 +556,192 @@ class MiniChart(tk.Canvas):
 
 
 # ============================================================
+#  CalendarHeatmap — GitHub 贡献图风格年度热力图
+# ============================================================
+
+class CalendarHeatmap(tk.Canvas):
+    """GitHub 贡献图风格的年度打卡热力图。"""
+
+    CELL_SIZE = 12
+    CELL_GAP = 2
+    WEEK_COUNT = 53
+    DAY_COUNT = 7
+
+    DEFAULT_COLORS = ["#ebedf0", "#9be9a8", "#40c463", "#30a14e", "#216e39"]
+
+    def __init__(self, parent: tk.Widget, width: int = 720, height: int = 130,
+                 color_scheme: list[str] | None = None, dark: bool = False):
+        bg = DARK_BG_COLOR if dark else BG_COLOR
+        super().__init__(parent, width=width, height=height,
+                         bg=bg, highlightthickness=0)
+        self.chart_width = width
+        self.chart_height = height
+        self.dark = dark
+        self.colors = color_scheme or self.DEFAULT_COLORS
+        self._data: dict[str, float] = {}
+        self._tooltip = None
+
+        self.bind("<Motion>", self._on_mouse_move)
+        self.bind("<Leave>", self._on_mouse_leave)
+
+    def set_data(self, date_values: dict[str, float], year: int | None = None) -> None:
+        """设置热力图数据。date_values: {"YYYY-MM-DD": count, ...}"""
+        self._data = date_values
+        self._redraw(year)
+
+    def set_color_scheme(self, base_color: str) -> None:
+        """根据基础色动态生成 5 级色阶。"""
+        hex_color = base_color.lstrip("#")
+        r, g, b = int(hex_color[0:2], 16), int(hex_color[2:4], 16), int(hex_color[4:6], 16)
+
+        self.colors = ["#ebedf0"]
+        for i in range(1, 5):
+            factor = i / 4.0
+            rr = int(r * factor)
+            gg = int(g * factor)
+            bb = int(b * factor)
+            self.colors.append(f"#{rr:02x}{gg:02x}{bb:02x}")
+
+        if self._data:
+            self._redraw()
+
+    def _redraw(self, year: int | None = None) -> None:
+        self.delete("all")
+
+        from datetime import datetime, date, timedelta
+
+        if year is None:
+            year = datetime.now().year
+
+        # 计算数据范围
+        values = list(self._data.values())
+        max_val = max(values) if values else 1
+
+        # 从该年第一天开始，找到第一个周日
+        year_start = date(year, 1, 1)
+        start_weekday = year_start.weekday()  # Mon=0, Sun=6
+        # 使用周日作为周起始 (GitHub style)
+        first_sunday = year_start - timedelta(days=start_weekday + 1 if start_weekday < 6 else 0)
+
+        pad_left = 30
+        pad_top = 20
+        pad_bottom = 10
+
+        cell_total = self.CELL_SIZE + self.CELL_GAP
+
+        # 绘制月份标签
+        month_names = ["1月", "2月", "3月", "4月", "5月", "6月",
+                       "7月", "8月", "9月", "10月", "11月", "12月"]
+        for m in range(1, 13):
+            month_first = date(year, m, 1)
+            week_offset = (month_first - first_sunday).days // 7
+            x = pad_left + week_offset * cell_total
+            if 0 <= week_offset < self.WEEK_COUNT:
+                self.create_text(
+                    x + self.CELL_SIZE // 2, 8,
+                    text=month_names[m - 1],
+                    fill=DARK_TEXT_COLOR if self.dark else TEXT_COLOR,
+                    font=("Microsoft YaHei", 7), anchor=tk.N
+                )
+
+        # 绘制日期格子
+        for week in range(self.WEEK_COUNT):
+            for day in range(self.DAY_COUNT):
+                cell_date = first_sunday + timedelta(days=week * 7 + day)
+                date_str = cell_date.isoformat()
+
+                x = pad_left + week * cell_total
+                y = pad_top + day * cell_total
+
+                # 只绘制该年的日期
+                if cell_date.year == year:
+                    value = self._data.get(date_str, 0)
+                    level = self._value_to_level(value, max_val)
+                    color = self.colors[min(level, len(self.colors) - 1)]
+
+                    self.create_rectangle(
+                        x, y, x + self.CELL_SIZE, y + self.CELL_SIZE,
+                        fill=color, outline="", tags=("cell", f"d_{date_str}")
+                    )
+                else:
+                    # 非本年日期留空
+                    self.create_rectangle(
+                        x, y, x + self.CELL_SIZE, y + self.CELL_SIZE,
+                        fill=self["bg"], outline="", tags="cell"
+                    )
+
+        # 图例
+        legend_x = pad_left
+        legend_y = pad_top + self.DAY_COUNT * cell_total + 4
+        for li, (color, label) in enumerate(zip(
+            self.colors, ["0", "", "", "", f"{max_val:.0f}" if max_val > 0 else "1"]
+        )):
+            lx = legend_x + li * (self.CELL_SIZE + self.CELL_GAP)
+            self.create_rectangle(
+                lx, legend_y, lx + self.CELL_SIZE, legend_y + self.CELL_SIZE,
+                fill=color, outline="#cccccc", width=1 if color == "#ebedf0" else 0
+            )
+
+    @staticmethod
+    def _value_to_level(value: float, max_val: float) -> int:
+        """数值映射到 0-4 级别。"""
+        if max_val <= 0:
+            return 0
+        if value <= 0:
+            return 0
+        ratio = value / max_val
+        if ratio <= 0.25:
+            return 1
+        elif ratio <= 0.5:
+            return 2
+        elif ratio <= 0.75:
+            return 3
+        else:
+            return 4
+
+    def _on_mouse_move(self, event) -> None:
+        """显示日期和数值的 tooltip。"""
+        item = self.find_closest(event.x, event.y)
+        if not item:
+            self._hide_tooltip()
+            return
+        tags = self.gettags(item[0]) if item else ()
+        date_tag = next((t for t in tags if t.startswith("d_")), None)
+        if not date_tag:
+            self._hide_tooltip()
+            return
+
+        date_str = date_tag[2:]
+        value = self._data.get(date_str, 0)
+        self._show_tooltip(event.x, event.y, date_str, value)
+
+    def _show_tooltip(self, x: int, y: int, date_str: str, value: float) -> None:
+        self._hide_tooltip()
+        text = f"{date_str}  {value:.0f}次" if value > 0 else f"{date_str}  无打卡"
+        self._tooltip = self.create_text(
+            x + 12, y - 10, text=text,
+            fill="#333333", font=("Microsoft YaHei", 9),
+            anchor=tk.SW, tags="tooltip"
+        )
+        bbox = self.bbox(self._tooltip)
+        if bbox:
+            self.create_rectangle(
+                bbox[0] - 4, bbox[1] - 2, bbox[2] + 4, bbox[3] + 2,
+                fill="#ffffff", outline="#cccccc", tags="tooltip_bg"
+            )
+            self.tag_lower("tooltip_bg", self._tooltip)
+
+    def _hide_tooltip(self) -> None:
+        if self._tooltip:
+            self.delete("tooltip")
+            self.delete("tooltip_bg")
+            self._tooltip = None
+
+    def _on_mouse_leave(self, event) -> None:
+        self._hide_tooltip()
+
+
+# ============================================================
 #  factory 函数
 # ============================================================
 

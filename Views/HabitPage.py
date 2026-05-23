@@ -7,6 +7,7 @@ from datetime import date
 from Services.HabitManager import HabitManager
 from .BasePage import BasePage
 from .Widgets import SearchBar, FormDialog, ConfirmDialog
+from .ChartWidgets import CalendarHeatmap
 
 
 class HabitPage(BasePage):
@@ -132,14 +133,11 @@ class HabitPage(BasePage):
             val_label.pack(side=tk.LEFT)
             self.stats_labels[key] = val_label
 
-        # 热力图占位（阶段五实现）
-        self.heatmap_frame = tk.Frame(self.right_frame, bg=self["bg"], height=140)
+        # 热力图
+        self.heatmap_frame = tk.Frame(self.right_frame, bg=self["bg"])
         self.heatmap_frame.pack(fill=tk.X, padx=16, pady=8)
-        self.heatmap_placeholder = tk.Label(
-            self.heatmap_frame, text="打卡热力图\n（阶段五实现）",
-            font=("Microsoft YaHei", 9), fg="#aaa", bg=self["bg"]
-        )
-        self.heatmap_placeholder.pack(expand=True)
+        self.heatmap = CalendarHeatmap(self.heatmap_frame, height=130)
+        self.heatmap.pack(fill=tk.X)
 
         # 操作按钮
         btn_frame = tk.Frame(self.right_frame, bg=self["bg"])
@@ -324,6 +322,12 @@ class HabitPage(BasePage):
         self.stats_labels["longest"].configure(text=f"{streak.get('longest', 0)} 天")
         self.stats_labels["total"].configure(text=f"{total} 次")
         self.stats_labels["rate"].configure(text=f"{rate:.0%}")
+
+        # 加载热力图数据
+        heatmap_data = self.manager.get_heatmap_data(habit.id)
+        self.heatmap.set_data(heatmap_data)
+        if habit.color and habit.color != "#4a90d9":
+            self.heatmap.set_color_scheme(habit.color)
 
         today = date.today().isoformat()
         checked = self.manager.is_checked_in(habit.id, today)
