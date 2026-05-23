@@ -59,10 +59,15 @@ class TestSimpleCrypto(unittest.TestCase):
         decrypted = SimpleCrypto.decrypt(encrypted, "master123")
         self.assertEqual(decrypted, "hello")
 
-    def test_v1_wrong_password_raises(self):
+    def test_v1_wrong_password(self):
+        """v1 无 HMAC 验证，错误密码可能返回乱码或不抛异常（UTF-8 解码失败才抛）。"""
         encrypted = SimpleCrypto.encrypt("hello", "master123", version="v1")
-        with self.assertRaises(ValueError):
-            SimpleCrypto.decrypt(encrypted, "wrongpass")
+        try:
+            result = SimpleCrypto.decrypt(encrypted, "wrongpass")
+            # v1 不保证检测错误密码，但结果不应是原文
+            self.assertNotEqual(result, "hello")
+        except ValueError:
+            pass  # UTF-8 解码失败也算检测到
 
     def test_v2_can_decrypt_v1(self):
         """确保 decrypt() 自动检测格式：v2 密码也可解密 v1 数据。"""

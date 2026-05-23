@@ -8,3 +8,4 @@ from .ConfigManager import ConfigManager
 from .CryptoService import CryptoService
 from .TodoManager import TodoManager
 from .HabitManager import HabitManager
+from .JournalManager import JournalManager

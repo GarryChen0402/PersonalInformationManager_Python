@@ -335,6 +335,173 @@ class KeywordEntry(tk.Frame):
         self._render_tags()
 
 
+# ---- CalendarNav ----
+
+class CalendarNav(tk.Frame):
+    """月历导航组件，支持日期标记和选择回调。"""
+
+    WEEKDAY_HEADERS_CN = ["一", "二", "三", "四", "五", "六", "日"]
+
+    def __init__(self, parent: tk.Widget, on_date_select: Callable[[str], None],
+                 marked_dates: set[str] | None = None):
+        super().__init__(parent)
+        self.on_date_select = on_date_select
+        self.marked_dates = marked_dates or set()
+        self.selected_date: str | None = None
+        self._current_year: int = 0
+        self._current_month: int = 0
+        self._day_buttons: list[tk.Label] = []
+
+        self._build()
+
+        from datetime import datetime
+        now = datetime.now()
+        self.goto_date(now.year, now.month)
+
+    def _build(self) -> None:
+        # 顶部：月份切换
+        header = tk.Frame(self)
+        header.pack(fill=tk.X, pady=(0, 4))
+
+        self._prev_btn = tk.Button(
+            header, text="◀", command=self._prev_month,
+            font=("Microsoft YaHei", 9), padx=6, cursor="hand2", relief=tk.FLAT
+        )
+        self._prev_btn.pack(side=tk.LEFT)
+
+        self._month_label = tk.Label(
+            header, text="", font=("Microsoft YaHei", 10, "bold"), width=12
+        )
+        self._month_label.pack(side=tk.LEFT, expand=True)
+
+        self._next_btn = tk.Button(
+            header, text="▶", command=self._next_month,
+            font=("Microsoft YaHei", 9), padx=6, cursor="hand2", relief=tk.FLAT
+        )
+        self._next_btn.pack(side=tk.RIGHT)
+
+        # 星期标题
+        week_header = tk.Frame(self)
+        week_header.pack(fill=tk.X)
+        for day_name in self.WEEKDAY_HEADERS_CN:
+            lbl = tk.Label(
+                week_header, text=day_name, font=("Microsoft YaHei", 8),
+                fg="#888888", width=3
+            )
+            lbl.pack(side=tk.LEFT, expand=True)
+
+        # 日期网格
+        self._grid_frame = tk.Frame(self)
+        self._grid_frame.pack(fill=tk.BOTH, expand=True)
+
+    def _render_grid(self) -> None:
+        for btn in self._day_buttons:
+            btn.destroy()
+        self._day_buttons.clear()
+
+        from datetime import datetime, date, timedelta
+        first_day = date(self._current_year, self._current_month, 1)
+        # 周一为 0
+        start_weekday = first_day.weekday()
+
+        # 计算当月天数
+        if self._current_month == 12:
+            next_month = date(self._current_year + 1, 1, 1)
+        else:
+            next_month = date(self._current_year, self._current_month + 1, 1)
+        days_in_month = (next_month - first_day).days
+
+        # 计算需要显示的总格数（从周一开始）
+        today = date.today()
+
+        for i in range(42):  # 最多 6 行 × 7 列
+            day_num = i - start_weekday + 1
+            col = i % 7
+            row = i // 7
+
+            if 1 <= day_num <= days_in_month:
+                cell_date = date(self._current_year, self._current_month, day_num)
+                date_str = cell_date.isoformat()
+                text = str(day_num)
+
+                # 颜色逻辑
+                is_today = cell_date == today
+                is_marked = date_str in self.marked_dates
+                is_selected = date_str == self.selected_date
+
+                bg = "#ffffff"
+                fg = "#333333"
+                font_style = ("Microsoft YaHei", 9)
+
+                if is_selected:
+                    bg = "#4a90d9"
+                    fg = "#ffffff"
+                elif is_today:
+                    bg = "#e8f4fd"
+                    fg = "#4a90d9"
+                    font_style = ("Microsoft YaHei", 9, "bold")
+
+                btn = tk.Label(
+                    self._grid_frame, text=text, font=font_style,
+                    bg=bg, fg=fg, width=3, padx=4, pady=2,
+                    cursor="hand2", relief=tk.FLAT
+                )
+                btn.grid(row=row, column=col, padx=1, pady=1, sticky="nsew")
+                btn.bind("<Button-1>", lambda e, d=date_str: self.select_date(d))
+
+                # 标记点
+                if is_marked and not is_selected:
+                    btn.configure(text=f"{day_num}\n●")
+                    from tkinter import font as tkfont
+                    btn.configure(font=("Microsoft YaHei", 7))
+
+                self._day_buttons.append(btn)
+            else:
+                # 空白填充
+                spacer = tk.Label(
+                    self._grid_frame, text="", font=("Microsoft YaHei", 9),
+                    bg="#f5f5f5", width=3
+                )
+                spacer.grid(row=row, column=col, padx=1, pady=1, sticky="nsew")
+                self._day_buttons.append(spacer)
+
+        for c in range(7):
+            self._grid_frame.columnconfigure(c, weight=1)
+
+    def select_date(self, date_str: str) -> None:
+        """选中指定日期并触发回调。"""
+        self.selected_date = date_str
+        self._render_grid()
+        self.on_date_select(date_str)
+
+    def set_marked_dates(self, dates: set[str]) -> None:
+        """更新有标记的日期集合。"""
+        self.marked_dates = dates
+        self._render_grid()
+
+    def goto_date(self, year: int, month: int) -> None:
+        """跳转到指定年月。"""
+        self._current_year = year
+        self._current_month = month
+        self._month_label.configure(text=f"{year}年 {month}月")
+        self._render_grid()
+
+    def _prev_month(self) -> None:
+        if self._current_month == 1:
+            self.goto_date(self._current_year - 1, 12)
+        else:
+            self.goto_date(self._current_year, self._current_month - 1)
+
+    def _next_month(self) -> None:
+        if self._current_month == 12:
+            self.goto_date(self._current_year + 1, 1)
+        else:
+            self.goto_date(self._current_year, self._current_month + 1)
+
+    def get_current_date(self) -> str | None:
+        return self.selected_date
+
+
 # ---- CSVPreviewDialog ----
 
 class CSVPreviewDialog(tk.Toplevel):

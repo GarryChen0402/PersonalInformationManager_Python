@@ -16,6 +16,7 @@ class NavFrame(tk.Frame):
         ("knowledge", "◣  知识管理"),
         ("todo", "☑  待办事项"),
         ("habit", "↯  习惯追踪"),
+        ("journal", "☷  日记"),
         ("password", "⚿  密码管理"),
         ("backup", "⚙  数据管理"),
         ("dashboard", "▣  数据概览"),

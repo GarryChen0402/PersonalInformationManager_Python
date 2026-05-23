@@ -14,6 +14,7 @@ from .PasswordPage import PasswordPage
 from .BackupPage import BackupPage
 from .TodoPage import TodoPage
 from .HabitPage import HabitPage
+from .JournalPage import JournalPage
 from .GlobalSearchBar import SearchResult
 from Services.ConfigManager import ConfigManager
 from Services.CryptoService import CryptoService
@@ -23,6 +24,7 @@ from Services.StatusManager import StatusManager
 from Services.KnowledgeManager import KnowledgeManager
 from Services.TodoManager import TodoManager
 from Services.HabitManager import HabitManager
+from Services.JournalManager import JournalManager
 
 
 # ---- 配色主题 ----
@@ -108,6 +110,7 @@ class App:
             "knowledge": KnowledgeManager(),
             "todo": TodoManager(),
             "habit": HabitManager(),
+            "journal": JournalManager(),
             "password": PasswordManager(),
         }
 
@@ -377,6 +380,7 @@ class App:
         self.pages["knowledge"] = KnowledgePage(self.content, self.set_status)
         self.pages["todo"] = TodoPage(self.content, self.set_status)
         self.pages["habit"] = HabitPage(self.content, self.set_status)
+        self.pages["journal"] = JournalPage(self.content, self.set_status)
         self.pages["password"] = PasswordPage(self.content, self.set_status)
         self.pages["backup"] = BackupPage(self.content, self.set_status)
 
@@ -438,6 +442,14 @@ class App:
                 snippet=h.category
             ))
 
+        # 日记
+        for j in self._search_managers["journal"].search(keyword):
+            results.append(SearchResult(
+                name=j.date if j.title else f"{j.date} 日记",
+                module="journal", item_id=j.id,
+                snippet=j.title if j.title else j.content[:30]
+            ))
+
         # 密码（不搜索密码内容，仅搜索平台/账号）
         for p in self._search_managers["password"].search(keyword):
             results.append(SearchResult(
@@ -459,7 +471,8 @@ class App:
         """搜索结果导航：切换到目标页面并高亮条目。"""
         nav_map = {
             "skill": "skill", "note": "knowledge", "ebook": "knowledge",
-            "todo": "todo", "habit": "habit", "password": "password",
+            "todo": "todo", "habit": "habit", "journal": "journal",
+            "password": "password",
             "status": "status",
         }
         page_name = nav_map.get(module, module)
@@ -505,7 +518,7 @@ class App:
         self.root.bind("<Control-minus>", lambda e: self._scale_fonts(-0.1))
         self.root.bind("<Control-0>", lambda e: self._reset_font_scale())
         # Ctrl+1~8 快速切换导航
-        nav_order = ["profile", "status", "skill", "knowledge", "todo", "habit", "password", "backup", "dashboard"]
+        nav_order = ["profile", "status", "skill", "knowledge", "todo", "habit", "journal", "password", "backup", "dashboard"]
         for i, name in enumerate(nav_order):
             self.root.bind(f"<Control-Key-{i + 1}>", lambda e, n=name: self._navigate(n))
 
