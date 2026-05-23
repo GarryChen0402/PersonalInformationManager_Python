@@ -571,10 +571,11 @@ class App:
         self.root.bind("<Control-equal>", lambda e: self._scale_fonts(0.1))
         self.root.bind("<Control-minus>", lambda e: self._scale_fonts(-0.1))
         self.root.bind("<Control-0>", lambda e: self._reset_font_scale())
-        # Ctrl+1~8 快速切换导航
-        nav_order = ["profile", "status", "skill", "knowledge", "todo", "habit", "journal", "password", "backup", "dashboard"]
+        # Ctrl+1~9 快速切换导航（前 9 个模块）
+        nav_order = ["profile", "status", "skill", "knowledge", "todo", "habit", "journal", "password", "backup"]
         for i, name in enumerate(nav_order):
-            self.root.bind(f"<Control-Key-{i + 1}>", lambda e, n=name: self._navigate(n))
+            if i < 9:
+                self.root.bind(f"<Control-Key-{i + 1}>", lambda e, n=name: self._navigate(n))
 
     def _navigate(self, page_name: str) -> None:
         """导航到指定页面。"""
