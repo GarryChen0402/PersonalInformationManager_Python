@@ -1,172 +1,140 @@
-"""状态管理页面。"""
+"""状态管理页面 — PySide6 版本。"""
 
-import tkinter as tk
-from tkinter import ttk, filedialog, messagebox
 from datetime import datetime, timedelta
+
+from PySide6.QtWidgets import (
+    QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel,
+    QTableWidgetItem, QFileDialog, QMessageBox, QMenu, QHeaderView
+)
+from PySide6.QtCore import Qt
 
 from Services.StatusManager import StatusManager
 from Models.Status import StatusRecord
 from .BasePage import BasePage
-from .Widgets import SearchBar, FormDialog, ConfirmDialog, DateRangePicker
+from .Widgets import FormDialog, ConfirmDialog, DateRangePicker
 from .ChartWidgets import LineChart, CalendarHeatmap
 
 
-COLOR_TAGS = {
-    "low": ("#fde8e8", "#c0392b"),     # bg, fg for average < 3
-    "mid": ("#fef9e7", "#b7950b"),     # bg, fg for 3-3.9
-    "high": ("#e8f8f0", "#27ae60"),    # bg, fg for >= 4
-}
-
-
 class StatusPage(BasePage):
-    """状态管理页面，三段式布局。"""
+    """状态管理页面，三段式布局 + 趋势图 + 热力图。"""
 
-    def __init__(self, parent: tk.Widget, set_status):
+    def __init__(self, parent=None, set_status=None):
         super().__init__(parent, set_status)
         self.manager = StatusManager()
+        self._period_days = 7
+        self._heatmap_metric = "mood"
 
         self._build_toolbar()
-        self._build_chart()
-        self._build_table()
-        self._build_context_menu([
-            ("编辑", self._open_edit_dialog),
-            ("---", None),
-            ("删除", self._confirm_delete),
-        ])
-        self._build_stats_bar()
+        self._build_charts()
+        self._build_table_columns()
+        self._build_context_menu()
 
     # ---- 工具栏 ----
 
     def _build_toolbar(self) -> None:
-        toolbar = tk.Frame(self, bg="#fafafa", pady=8)
-        toolbar.pack(fill=tk.X, padx=12, pady=(12, 0))
+        toolbar = QWidget()
+        toolbar_layout = QHBoxLayout(toolbar)
+        toolbar_layout.setContentsMargins(0, 4, 0, 4)
 
-        self.date_picker = DateRangePicker(toolbar, on_query=self._on_date_range)
-        self.date_picker.pack(side=tk.LEFT)
+        self.date_picker = DateRangePicker()
+        self.date_picker.query_requested.connect(self._on_date_range)
+        toolbar_layout.addWidget(self.date_picker)
 
-        export_btn = tk.Button(
-            toolbar, text="导出CSV", command=self._export_csv,
-            font=("Microsoft YaHei", 9), padx=12, cursor="hand2"
-        )
-        export_btn.pack(side=tk.RIGHT, padx=4)
+        toolbar_layout.addStretch()
 
-        add_btn = tk.Button(
-            toolbar, text="+ 添加记录", command=self._open_add_dialog,
-            font=("Microsoft YaHei", 9), padx=12, cursor="hand2"
-        )
-        add_btn.pack(side=tk.RIGHT, padx=4)
+        add_btn = QPushButton("+ 添加记录")
+        add_btn.clicked.connect(self._open_add_dialog)
+        toolbar_layout.addWidget(add_btn)
+
+        export_btn = QPushButton("导出CSV")
+        export_btn.clicked.connect(self._export_csv)
+        toolbar_layout.addWidget(export_btn)
+
+        self._layout.insertWidget(0, toolbar)
 
     # ---- 表格 ----
 
-    def _build_table(self) -> None:
-        columns = ("date", "mood", "energy", "focus", "weight", "sleep", "note")
-        self.tree = ttk.Treeview(self, columns=columns, show="headings",
-                                 selectmode="browse")
+    def _build_table_columns(self) -> None:
+        self.table.setColumnCount(7)
+        self.table.setHorizontalHeaderLabels([
+            "日期", "心情", "精力", "专注度", "体重(kg)", "睡眠(h)", "备注"
+        ])
+        self.table.horizontalHeader().setSectionResizeMode(6, QHeaderView.Stretch)
+        self.table.doubleClicked.connect(self._open_edit_dialog)
 
-        self.tree.heading("date", text="日期")
-        self.tree.heading("mood", text="心情")
-        self.tree.heading("energy", text="精力")
-        self.tree.heading("focus", text="专注度")
-        self.tree.heading("weight", text="体重(kg)")
-        self.tree.heading("sleep", text="睡眠(h)")
-        self.tree.heading("note", text="备注")
+    # ---- 图表 ----
 
-        self.tree.column("date", width=100, anchor=tk.CENTER)
-        self.tree.column("mood", width=60, anchor=tk.CENTER)
-        self.tree.column("energy", width=60, anchor=tk.CENTER)
-        self.tree.column("focus", width=60, anchor=tk.CENTER)
-        self.tree.column("weight", width=80, anchor=tk.CENTER)
-        self.tree.column("sleep", width=70, anchor=tk.CENTER)
-        self.tree.column("note", width=150)
+    def _build_charts(self) -> None:
+        charts_widget = QWidget()
+        charts_layout = QVBoxLayout(charts_widget)
+        charts_layout.setContentsMargins(0, 0, 0, 0)
+        charts_layout.setSpacing(4)
 
-        scrollbar = ttk.Scrollbar(self, orient=tk.VERTICAL, command=self.tree.yview)
-        self.tree.configure(yscrollcommand=scrollbar.set)
+        # 周期切换按钮
+        period_frame = QWidget()
+        period_layout = QHBoxLayout(period_frame)
+        period_layout.setContentsMargins(8, 0, 0, 0)
+        period_layout.setSpacing(2)
 
-        self.tree.pack(fill=tk.BOTH, expand=True, padx=12, pady=8)
-        scrollbar.pack(side=tk.RIGHT, fill=tk.Y, padx=(0, 12), pady=8)
-
-        # 颜色标签配置
-        self.tree.tag_configure("low", background="#fde8e8", foreground="#c0392b")
-        self.tree.tag_configure("mid", background="#fef9e7", foreground="#b7950b")
-        self.tree.tag_configure("high", background="#e8f8f0", foreground="#27ae60")
-
-        self.tree.bind("<Double-1>", lambda e: self._open_edit_dialog())
-
-    # ---- 趋势图 ----
-
-    def _build_chart(self) -> None:
-        """构建趋势图区域。"""
-        chart_frame = tk.Frame(self, bg="#ffffff")
-        chart_frame.pack(fill=tk.X, padx=12, pady=(4, 0))
-
-        btn_frame = tk.Frame(chart_frame, bg="#ffffff")
-        btn_frame.pack(fill=tk.X, pady=(0, 2))
-
-        self._period_var = tk.StringVar(value="7")
-        self._period_btns: dict[str, tk.Button] = {}
+        self._period_btns: dict[str, QPushButton] = {}
         for text, val in [("7天", "7"), ("30天", "30"), ("90天", "90")]:
-            btn = tk.Button(
-                btn_frame, text=text,
-                command=lambda v=val: self._on_period_change(v),
-                font=("Microsoft YaHei", 8), padx=10, cursor="hand2",
-                relief=tk.SUNKEN if val == "7" else tk.RAISED,
-                bg="#e0e0e0" if val == "7" else "#f0f0f0",
-            )
-            btn.pack(side=tk.LEFT, padx=1)
+            btn = QPushButton(text)
+            btn.setCheckable(True)
+            btn.setChecked(val == "7")
+            btn.clicked.connect(lambda checked, v=val: self._on_period_change(v))
+            period_layout.addWidget(btn)
             self._period_btns[val] = btn
+        period_layout.addStretch()
+        charts_layout.addWidget(period_frame)
 
-        self.line_chart = LineChart(chart_frame, height=200, title="")
-        self.line_chart.pack(fill=tk.X)
+        # 趋势图
+        self.line_chart = LineChart(title="")
+        self.line_chart.setMinimumHeight(200)
+        charts_layout.addWidget(self.line_chart)
 
-        # 热力图切换按钮
-        heatmap_toggle_frame = tk.Frame(chart_frame, bg="#ffffff")
-        heatmap_toggle_frame.pack(fill=tk.X, pady=(4, 0))
+        # 热力图指标切换
+        heatmap_toggle = QWidget()
+        heatmap_toggle_layout = QHBoxLayout(heatmap_toggle)
+        heatmap_toggle_layout.setContentsMargins(8, 0, 0, 0)
+        heatmap_toggle_layout.setSpacing(2)
 
-        self._heatmap_metric = tk.StringVar(value="mood")
+        self._heatmap_btns: dict[str, QPushButton] = {}
         for text, val in [("心情", "mood"), ("精力", "energy"),
                            ("专注", "focus"), ("睡眠", "sleep")]:
-            btn = tk.Button(
-                heatmap_toggle_frame, text=text,
-                command=lambda v=val: self._on_heatmap_metric_change(v),
-                font=("Microsoft YaHei", 8), padx=8, cursor="hand2",
-                relief=tk.SUNKEN if val == "mood" else tk.RAISED,
-                bg="#e0e0e0" if val == "mood" else "#f0f0f0",
-            )
-            btn.pack(side=tk.LEFT, padx=1)
-            setattr(self, f"_heatmap_btn_{val}", btn)
+            btn = QPushButton(text)
+            btn.setCheckable(True)
+            btn.setChecked(val == "mood")
+            btn.clicked.connect(lambda checked, v=val: self._on_heatmap_metric_change(v))
+            heatmap_toggle_layout.addWidget(btn)
+            self._heatmap_btns[val] = btn
+        heatmap_toggle_layout.addStretch()
+        charts_layout.addWidget(heatmap_toggle)
 
-        self.heatmap = CalendarHeatmap(chart_frame, height=130)
-        self.heatmap.pack(fill=tk.X, pady=(4, 0))
+        # 热力图
+        self.heatmap = CalendarHeatmap()
+        self.heatmap.setMinimumHeight(140)
+        charts_layout.addWidget(self.heatmap)
+
+        self._layout.insertWidget(1, charts_widget)
 
     def _on_heatmap_metric_change(self, metric: str) -> None:
-        """切换热力图指标。"""
-        for v in ("mood", "energy", "focus", "sleep"):
-            btn = getattr(self, f"_heatmap_btn_{v}", None)
-            if btn:
-                if v == metric:
-                    btn.configure(relief=tk.SUNKEN, bg="#e0e0e0")
-                else:
-                    btn.configure(relief=tk.RAISED, bg="#f0f0f0")
-        self._heatmap_metric.set(metric)
+        for v, btn in self._heatmap_btns.items():
+            btn.setChecked(v == metric)
+        self._heatmap_metric = metric
         self._load_heatmap_data()
 
     def _on_period_change(self, days: str) -> None:
-        """切换图表周期。"""
         for v, btn in self._period_btns.items():
-            if v == days:
-                btn.configure(relief=tk.SUNKEN, bg="#e0e0e0")
-            else:
-                btn.configure(relief=tk.RAISED, bg="#f0f0f0")
-        self._load_chart_data(int(days))
+            btn.setChecked(v == days)
+        self._period_days = int(days)
+        self._load_chart_data()
 
     def _load_heatmap_data(self) -> None:
-        """加载热力图数据（年度）。"""
-        from datetime import datetime
         year = datetime.now().year
         start = f"{year}-01-01"
         end = f"{year}-12-31"
         records = self.manager.get_by_date_range(start, end)
-        metric = self._heatmap_metric.get()
+        metric = self._heatmap_metric
 
         data: dict[str, float] = {}
         for r in records:
@@ -181,10 +149,9 @@ class StatusPage(BasePage):
 
         self.heatmap.set_data(data)
 
-    def _load_chart_data(self, period_days: int) -> None:
-        """加载图表数据。"""
+    def _load_chart_data(self) -> None:
         end = datetime.now()
-        start = end - timedelta(days=period_days)
+        start = end - timedelta(days=self._period_days)
         records = self.manager.get_by_date_range(
             start.strftime("%Y-%m-%d"), end.strftime("%Y-%m-%d")
         )
@@ -205,22 +172,35 @@ class StatusPage(BasePage):
 
         self.line_chart.set_data(labels, series)
 
+    # ---- 右键菜单 ----
+
+    def _build_context_menu(self) -> QMenu | None:
+        record_id = self._get_selected_id()
+        if not record_id:
+            return None
+        menu = QMenu(self)
+        menu.addAction("编辑", self._open_edit_dialog)
+        menu.addSeparator()
+        menu.addAction("删除", self._confirm_delete)
+        return menu
+
     # ---- 添加 ----
 
     def _open_add_dialog(self) -> None:
         today = datetime.now().strftime("%Y-%m-%d")
         fields = [
-            {"name": "date", "label": "日期", "type": "text", "required": True},
-            {"name": "mood", "label": "心情(1-5)", "type": "spinbox", "from_": 1, "to": 5},
-            {"name": "energy", "label": "精力(1-5)", "type": "spinbox", "from_": 1, "to": 5},
-            {"name": "focus", "label": "专注度(1-5)", "type": "spinbox", "from_": 1, "to": 5},
-            {"name": "weight", "label": "体重(kg)", "type": "text"},
-            {"name": "sleep_hours", "label": "睡眠(h)", "type": "text"},
-            {"name": "note", "label": "备注", "type": "textarea"},
+            {"key": "date", "label": "日期", "type": "text", "required": True},
+            {"key": "mood", "label": "心情(1-5)", "type": "spinbox", "from_": 1, "to": 5},
+            {"key": "energy", "label": "精力(1-5)", "type": "spinbox", "from_": 1, "to": 5},
+            {"key": "focus", "label": "专注度(1-5)", "type": "spinbox", "from_": 1, "to": 5},
+            {"key": "weight", "label": "体重(kg)", "type": "text"},
+            {"key": "sleep_hours", "label": "睡眠(h)", "type": "text"},
+            {"key": "note", "label": "备注", "type": "textarea"},
         ]
         initial = {"date": today, "mood": 3, "energy": 3, "focus": 3}
-        FormDialog(self, "添加状态记录", fields, on_save=self._do_add,
-                   initial_data=initial)
+        data = FormDialog.get_form_data(self, "添加状态记录", fields, initial)
+        if data:
+            self._do_add(data)
 
     def _do_add(self, data: dict) -> None:
         try:
@@ -235,9 +215,9 @@ class StatusPage(BasePage):
                 note=data.get("note", "")
             )
             self.refresh()
-            self.set_status(f"状态记录「{data['date']}」已保存")
+            self.emit_status(f"状态记录「{data['date']}」已保存")
         except Exception as e:
-            messagebox.showerror("添加失败", str(e))
+            QMessageBox.critical(self, "添加失败", str(e))
 
     # ---- 编辑 ----
 
@@ -247,13 +227,13 @@ class StatusPage(BasePage):
             return
 
         fields = [
-            {"name": "date", "label": "日期", "type": "text", "required": True},
-            {"name": "mood", "label": "心情(1-5)", "type": "spinbox", "from_": 1, "to": 5},
-            {"name": "energy", "label": "精力(1-5)", "type": "spinbox", "from_": 1, "to": 5},
-            {"name": "focus", "label": "专注度(1-5)", "type": "spinbox", "from_": 1, "to": 5},
-            {"name": "weight", "label": "体重(kg)", "type": "text"},
-            {"name": "sleep_hours", "label": "睡眠(h)", "type": "text"},
-            {"name": "note", "label": "备注", "type": "textarea"},
+            {"key": "date", "label": "日期", "type": "text", "required": True},
+            {"key": "mood", "label": "心情(1-5)", "type": "spinbox", "from_": 1, "to": 5},
+            {"key": "energy", "label": "精力(1-5)", "type": "spinbox", "from_": 1, "to": 5},
+            {"key": "focus", "label": "专注度(1-5)", "type": "spinbox", "from_": 1, "to": 5},
+            {"key": "weight", "label": "体重(kg)", "type": "text"},
+            {"key": "sleep_hours", "label": "睡眠(h)", "type": "text"},
+            {"key": "note", "label": "备注", "type": "textarea"},
         ]
         initial = {
             "date": record.date,
@@ -262,9 +242,9 @@ class StatusPage(BasePage):
             "sleep_hours": str(record.sleep_hours) if record.sleep_hours else "",
             "note": record.note,
         }
-        FormDialog(self, "编辑状态记录", fields,
-                   on_save=lambda d: self._do_edit(record.id, d),
-                   initial_data=initial)
+        data = FormDialog.get_form_data(self, "编辑状态记录", fields, initial)
+        if data:
+            self._do_edit(record.id, data)
 
     def _do_edit(self, record_id: str, data: dict) -> None:
         try:
@@ -279,9 +259,9 @@ class StatusPage(BasePage):
                 note=data.get("note", "")
             )
             self.refresh()
-            self.set_status(f"状态记录「{data['date']}」已更新")
+            self.emit_status(f"状态记录「{data['date']}」已更新")
         except Exception as e:
-            messagebox.showerror("编辑失败", str(e))
+            QMessageBox.critical(self, "编辑失败", str(e))
 
     # ---- 删除 ----
 
@@ -293,22 +273,21 @@ class StatusPage(BasePage):
                               f"确定要删除「{record.date}」的状态记录吗？"):
             self.manager.delete_record(record.id)
             self.refresh()
-            self.set_status(f"状态记录「{record.date}」已删除")
+            self.emit_status(f"状态记录「{record.date}」已删除")
 
     # ---- 日期筛选 ----
 
     def _on_date_range(self, start: str, end: str) -> None:
         records = self.manager.get_by_date_range(start, end)
-        self._populate_tree(records)
+        self._populate_table(records)
 
     # ---- 数据加载 ----
 
     def refresh(self) -> None:
-        """重新加载状态记录、图表和统计。"""
         records = self.manager.get_latest(30)
-        self._populate_tree(records)
+        self._populate_table(records)
 
-        self._load_chart_data(int(self._period_var.get()))
+        self._load_chart_data()
         self._load_heatmap_data()
 
         # 设置默认日期范围
@@ -316,10 +295,9 @@ class StatusPage(BasePage):
         start = (datetime.now() - timedelta(days=7)).strftime("%Y-%m-%d")
         self.date_picker.set_range(start, end)
 
-        # 统计栏
         stats = self.manager.get_statistics(period="week")
         if stats["count"] > 0:
-            self.stats_var.set(
+            self._set_stats_text(
                 f"本周({stats['count']}条)  |  "
                 f"平均心情: {stats['mood']}/5  |  "
                 f"平均精力: {stats['energy']}/5  |  "
@@ -327,21 +305,21 @@ class StatusPage(BasePage):
                 f"平均睡眠: {stats['sleep_hours']}h"
             )
         else:
-            self.stats_var.set("本周暂无记录")
+            self._set_stats_text("本周暂无记录")
 
-    def _populate_tree(self, records: list[StatusRecord]) -> None:
-        self._clear_tree()
-
+    def _populate_table(self, records: list[StatusRecord]) -> None:
+        self._clear_table()
         for r in records:
             avg = (r.mood + r.energy + r.focus) / 3
             if avg < 3:
-                tag = "low"
+                color = QTableWidgetItem().background().color()  # 用背景色
+                row_color = "#fde8e8"
             elif avg < 4:
-                tag = "mid"
+                row_color = "#fef9e7"
             else:
-                tag = "high"
+                row_color = "#e8f8f0"
 
-            self.tree.insert("", tk.END, iid=r.id, values=(
+            self._add_row([
                 r.date,
                 f"{r.mood}/5",
                 f"{r.energy}/5",
@@ -349,25 +327,37 @@ class StatusPage(BasePage):
                 f"{r.weight:.1f}" if r.weight else "-",
                 f"{r.sleep_hours:.1f}" if r.sleep_hours else "-",
                 r.note,
-            ), tags=(tag,))
+            ], item_id=r.id)
+
+            # 应用行背景色
+            row = self.table.rowCount() - 1
+            for col in range(self.table.columnCount()):
+                item = self.table.item(row, col)
+                if item:
+                    item.setBackground(Qt.GlobalColor.transparent)
+            # 使用交替方式实现行颜色
+            from PySide6.QtGui import QColor
+            for col in range(self.table.columnCount()):
+                item = self.table.item(row, col)
+                if item:
+                    item.setBackground(QColor(row_color))
 
     def _get_selected(self) -> StatusRecord | None:
         record_id = self._get_selected_id()
         if not record_id:
+            QMessageBox.information(self, "提示", "请先选中一条记录")
             return None
         return self.manager.get_by_id(record_id)
 
     # ---- CSV 导出 ----
 
     def _export_csv(self) -> None:
-        path = filedialog.asksaveasfilename(
-            defaultextension=".csv",
-            filetypes=[("CSV 文件", "*.csv")],
-            initialfile="status.csv"
+        path, _ = QFileDialog.getSaveFileName(
+            self, "导出状态记录", "status.csv", "CSV 文件 (*.csv)"
         )
         if path:
             try:
                 self.manager.export_csv(path)
-                self.set_status(f"状态记录已导出到 {path}")
+                self.emit_status(f"状态记录已导出到 {path}")
             except Exception as e:
-                messagebox.showerror("导出失败", str(e))
+                QMessageBox.critical(self, "导出失败", str(e))

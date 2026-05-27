@@ -1,8 +1,14 @@
-"""知识管理页面 — 笔记 + 电子书双 Tab。"""
+"""知识管理页面 — PySide6 版本，笔记 + 电子书双 Tab。"""
 
 import os
-import tkinter as tk
-from tkinter import ttk, filedialog, messagebox
+
+from PySide6.QtWidgets import (
+    QWidget, QVBoxLayout, QHBoxLayout, QSplitter, QTabWidget,
+    QPushButton, QComboBox, QLabel, QTextEdit, QLineEdit,
+    QTableWidgetItem, QFileDialog, QMessageBox, QMenu, QHeaderView,
+    QDialog, QFormLayout, QDialogButtonBox, QFrame
+)
+from PySide6.QtCore import Qt
 
 from Services.KnowledgeManager import KnowledgeManager
 from Models.Knowledge import KnowledgeItem
@@ -12,7 +18,6 @@ from .ChartWidgets import BarChart
 
 
 def _format_size(size_bytes: int) -> str:
-    """格式化文件大小显示。"""
     if size_bytes < 1024:
         return f"{size_bytes} B"
     elif size_bytes < 1024 * 1024:
@@ -31,34 +36,37 @@ def _format_keywords(keywords: list) -> str:
 #  KnowledgePage 主框架
 # ============================================================
 
-class KnowledgePage(tk.Frame):
+class KnowledgePage(QWidget):
     """知识管理页面，包含笔记 / 电子书两个 Tab。"""
 
-    def __init__(self, parent: tk.Widget, set_status):
-        super().__init__(parent, bg="#ffffff")
+    def __init__(self, parent=None, set_status=None):
+        super().__init__(parent)
         self.manager = KnowledgeManager()
-        self.set_status = set_status
+        self._set_status = set_status
+        self._build()
 
-        self.notebook = ttk.Notebook(self)
-        self.note_tab = NoteTabView(self.notebook, self.manager, self.set_status)
-        self.ebook_tab = EbookTabView(self.notebook, self.manager, self.set_status)
-        self.notebook.add(self.note_tab, text="  文本笔记  ")
-        self.notebook.add(self.ebook_tab, text="  PDF电子书  ")
-        self.notebook.pack(fill=tk.BOTH, expand=True)
+    def _build(self) -> None:
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+
+        self.notebook = QTabWidget()
+        self.note_tab = NoteTabView(self.manager, self._set_status)
+        self.ebook_tab = EbookTabView(self.manager, self._set_status)
+        self.notebook.addTab(self.note_tab, "文本笔记")
+        self.notebook.addTab(self.ebook_tab, "PDF电子书")
+        layout.addWidget(self.notebook)
 
     def refresh(self) -> None:
-        current = self.notebook.select()
-        tab = self.notebook.nametowidget(current)
-        if hasattr(tab, "refresh"):
-            tab.refresh()
+        current = self.notebook.currentWidget()
+        if current and hasattr(current, "refresh"):
+            current.refresh()
 
     def highlight_item(self, item_id: str, item_type: str = "note") -> None:
-        """定位并高亮指定条目（支持 note/ebook 子类型）。"""
         if item_type == "ebook":
-            self.notebook.select(self.ebook_tab)
+            self.notebook.setCurrentWidget(self.ebook_tab)
             self.ebook_tab.highlight_item(item_id)
         else:
-            self.notebook.select(self.note_tab)
+            self.notebook.setCurrentWidget(self.note_tab)
             self.note_tab.highlight_item(item_id)
 
 
@@ -66,170 +74,171 @@ class KnowledgePage(tk.Frame):
 #  NoteTabView — 文本笔记
 # ============================================================
 
-class NoteTabView(BasePage):
+class NoteTabView(QWidget):
     """文本笔记子视图，左右分栏布局。"""
 
-    def __init__(self, parent: tk.Widget, manager: KnowledgeManager, set_status):
-        super().__init__(parent, set_status)
+    def __init__(self, manager: KnowledgeManager, set_status, parent=None):
+        super().__init__(parent)
         self.manager = manager
+        self._set_status = set_status
         self.current_note: KnowledgeItem | None = None
 
-        self._build_toolbar()
+        self._build()
+
+    def _build(self) -> None:
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(4)
+
+        # 工具栏
+        toolbar = QWidget()
+        toolbar_layout = QHBoxLayout(toolbar)
+        toolbar_layout.setContentsMargins(8, 6, 8, 6)
+
+        self.search_bar = SearchBar(placeholder="搜索笔记...")
+        self.search_bar.search_requested.connect(self._on_search)
+        toolbar_layout.addWidget(self.search_bar)
+
+        toolbar_layout.addWidget(QLabel("类别："))
+        self.category_filter = QComboBox()
+        self.category_filter.currentTextChanged.connect(self._on_filter)
+        toolbar_layout.addWidget(self.category_filter)
+
+        toolbar_layout.addStretch()
+
+        export_btn = QPushButton("导出CSV")
+        export_btn.clicked.connect(self._export_csv)
+        toolbar_layout.addWidget(export_btn)
+
+        add_btn = QPushButton("+ 新建笔记")
+        add_btn.clicked.connect(self._open_create_dialog)
+        toolbar_layout.addWidget(add_btn)
+        layout.addWidget(toolbar)
 
         # 左右分栏
-        paned = tk.PanedWindow(self, orient=tk.HORIZONTAL, sashwidth=4)
-        paned.pack(fill=tk.BOTH, expand=True, padx=8, pady=4)
+        splitter = QSplitter(Qt.Horizontal)
 
         # 左侧：笔记列表
-        left = tk.Frame(paned, bg="#ffffff")
-        paned.add(left, width=320, minsize=200)
+        left = QWidget()
+        left_layout = QVBoxLayout(left)
+        left_layout.setContentsMargins(4, 0, 0, 0)
 
-        self._build_note_list(left)
+        self.note_table = self._build_list_table()
+        left_layout.addWidget(self.note_table)
+        splitter.addWidget(left)
 
         # 右侧：详情编辑面板
-        right = tk.Frame(paned, bg="#ffffff")
-        paned.add(right, width=500, minsize=300)
+        right = QWidget()
+        right_layout = QVBoxLayout(right)
+        right_layout.setContentsMargins(0, 0, 4, 0)
 
-        self._build_detail_panel(right)
+        self._build_detail_panel(right_layout)
+        splitter.addWidget(right)
+
+        splitter.setStretchFactor(0, 2)
+        splitter.setStretchFactor(1, 3)
+        layout.addWidget(splitter)
 
         # 类别分布图
-        self.note_bar_chart = BarChart(self, height=150, title="")
-        self.note_bar_chart.pack(fill=tk.X, padx=12, pady=(4, 0))
+        self.note_bar_chart = BarChart(title="")
+        self.note_bar_chart.setMinimumHeight(150)
+        layout.addWidget(self.note_bar_chart)
 
         # 底部统计
-        self._build_stats_bar(pady=4)
+        self.stats_label = QLabel()
+        self.stats_label.setProperty("statsLabel", True)
+        layout.addWidget(self.stats_label)
 
-    # ---- 工具栏 ----
+    def _build_list_table(self) -> QWidget:
+        """构建笔记列表表格。"""
+        container = QWidget()
+        layout = QVBoxLayout(container)
+        layout.setContentsMargins(0, 0, 0, 0)
 
-    def _build_toolbar(self) -> None:
-        toolbar = tk.Frame(self, bg="#fafafa", pady=6)
-        toolbar.pack(fill=tk.X, padx=12, pady=(12, 0))
+        self.tree = self.note_table = self._make_table()
+        self.tree.setColumnCount(4)
+        self.tree.setHorizontalHeaderLabels(["标题", "类别", "关键词", "更新时间"])
+        self.tree.horizontalHeader().setSectionResizeMode(0, QHeaderView.Stretch)
+        self.tree.itemSelectionChanged.connect(self._on_select_note)
+        layout.addWidget(self.tree)
+        return container
 
-        self.search_bar = SearchBar(toolbar, on_search=self._on_search)
-        self.search_bar.pack(side=tk.LEFT, padx=4)
+    def _make_table(self):
+        from PySide6.QtWidgets import QTableWidget
+        t = QTableWidget()
+        t.setSelectionBehavior(QTableWidget.SelectRows)
+        t.setSelectionMode(QTableWidget.SingleSelection)
+        t.setEditTriggers(QTableWidget.NoEditTriggers)
+        t.setAlternatingRowColors(True)
+        t.verticalHeader().setVisible(False)
+        t.horizontalHeader().setStretchLastSection(True)
+        t.setSortingEnabled(True)
+        return t
 
-        tk.Label(toolbar, text="类别：", bg="#fafafa",
-                 font=("Microsoft YaHei", 9)).pack(side=tk.LEFT, padx=(8, 2))
-
-        self.category_filter = ttk.Combobox(
-            toolbar, state="readonly", width=8,
-            font=("Microsoft YaHei", 9)
-        )
-        self.category_filter.pack(side=tk.LEFT, padx=4)
-        self.category_filter.bind("<<ComboboxSelected>>", lambda e: self._on_filter())
-
-        export_btn = tk.Button(
-            toolbar, text="导出CSV", command=self._export_csv,
-            font=("Microsoft YaHei", 9), padx=12, cursor="hand2"
-        )
-        export_btn.pack(side=tk.RIGHT, padx=4)
-
-        add_btn = tk.Button(
-            toolbar, text="+ 新建笔记", command=self._open_create_dialog,
-            font=("Microsoft YaHei", 9), padx=12, cursor="hand2"
-        )
-        add_btn.pack(side=tk.RIGHT, padx=4)
-
-    # ---- 左侧笔记列表 ----
-
-    def _build_note_list(self, parent: tk.Frame) -> None:
-        columns = ("title", "category", "keywords", "updated")
-        self.tree = ttk.Treeview(parent, columns=columns, show="headings",
-                                      selectmode="browse")
-
-        self.tree.heading("title", text="标题")
-        self.tree.heading("category", text="类别")
-        self.tree.heading("keywords", text="关键词")
-        self.tree.heading("updated", text="更新时间")
-
-        self.tree.column("title", width=120)
-        self.tree.column("category", width=50, anchor=tk.CENTER)
-        self.tree.column("keywords", width=80)
-        self.tree.column("updated", width=80, anchor=tk.CENTER)
-
-        scrollbar = ttk.Scrollbar(parent, orient=tk.VERTICAL,
-                                  command=self.tree.yview)
-        self.tree.configure(yscrollcommand=scrollbar.set)
-
-        self.tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-
-        self.tree.bind("<<TreeviewSelect>>", self._on_select_note)
-
-    # ---- 右侧详情面板 ----
-
-    def _build_detail_panel(self, parent: tk.Frame) -> None:
-        form = tk.Frame(parent, bg="#ffffff", padx=12, pady=8)
-        form.pack(fill=tk.BOTH, expand=True)
+    def _build_detail_panel(self, layout: QVBoxLayout) -> None:
+        form = QWidget()
+        form_layout = QVBoxLayout(form)
+        form_layout.setContentsMargins(8, 8, 8, 8)
+        form_layout.setSpacing(8)
 
         # 标题
-        tk.Label(form, text="标题：", bg="#ffffff",
-                 font=("Microsoft YaHei", 10, "bold")).pack(anchor=tk.W)
-        self.title_entry = tk.Entry(form, font=("Microsoft YaHei", 11))
-        self.title_entry.pack(fill=tk.X, pady=(2, 8))
+        form_layout.addWidget(QLabel("标题："))
+        self.title_entry = QLineEdit()
+        form_layout.addWidget(self.title_entry)
 
         # 类别
-        row1 = tk.Frame(form, bg="#ffffff")
-        row1.pack(fill=tk.X, pady=(0, 8))
-        tk.Label(row1, text="类别：", bg="#ffffff",
-                 font=("Microsoft YaHei", 9)).pack(side=tk.LEFT)
-        self.category_combo = ttk.Combobox(
-            row1, values=self.manager.VALID_CATEGORIES,
-            state="readonly", font=("Microsoft YaHei", 9), width=10
-        )
-        self.category_combo.pack(side=tk.LEFT, padx=8)
+        row1 = QHBoxLayout()
+        row1.addWidget(QLabel("类别："))
+        self.category_combo = QComboBox()
+        self.category_combo.addItems(self.manager.VALID_CATEGORIES)
+        row1.addWidget(self.category_combo)
+        row1.addStretch()
+        form_layout.addLayout(row1)
 
         # 关键词
-        tk.Label(form, text="关键词：", bg="#ffffff",
-                 font=("Microsoft YaHei", 9)).pack(anchor=tk.W)
-        self.keyword_entry = KeywordEntry(form)
-        self.keyword_entry.pack(fill=tk.X, pady=(2, 8))
+        form_layout.addWidget(QLabel("关键词："))
+        self.keyword_entry = KeywordEntry()
+        form_layout.addWidget(self.keyword_entry)
 
         # 内容
-        tk.Label(form, text="内容：", bg="#ffffff",
-                 font=("Microsoft YaHei", 9)).pack(anchor=tk.W)
-        self.content_text = tk.Text(form, font=("Microsoft YaHei", 10),
-                                    wrap=tk.WORD, undo=True)
-        self.content_text.pack(fill=tk.BOTH, expand=True, pady=(2, 8))
+        form_layout.addWidget(QLabel("内容："))
+        self.content_text = QTextEdit()
+        form_layout.addWidget(self.content_text)
 
         # 操作按钮
-        btn_row = tk.Frame(form, bg="#ffffff")
-        btn_row.pack(fill=tk.X)
+        btn_row = QHBoxLayout()
+        self.save_btn = QPushButton("保存修改")
+        self.save_btn.clicked.connect(self._save_current_note)
+        btn_row.addWidget(self.save_btn)
 
-        self.save_btn = tk.Button(
-            btn_row, text="保存修改", command=self._save_current_note,
-            font=("Microsoft YaHei", 9), padx=12, cursor="hand2"
-        )
-        self.save_btn.pack(side=tk.LEFT, padx=(0, 8))
+        self.delete_btn = QPushButton("删除笔记")
+        self.delete_btn.clicked.connect(self._confirm_delete)
+        btn_row.addWidget(self.delete_btn)
+        btn_row.addStretch()
+        form_layout.addLayout(btn_row)
 
-        self.delete_btn = tk.Button(
-            btn_row, text="删除笔记", command=self._confirm_delete,
-            font=("Microsoft YaHei", 9), padx=12, cursor="hand2"
-        )
-        self.delete_btn.pack(side=tk.LEFT)
+        layout.addWidget(form)
 
         self._toggle_detail_editing(False)
 
     def _toggle_detail_editing(self, enabled: bool) -> None:
-        state = tk.NORMAL if enabled else tk.DISABLED
-        self.title_entry.configure(state=state)
-        self.category_combo.configure(state="readonly" if enabled else tk.DISABLED)
-        self.content_text.configure(state=state)
-        self.keyword_entry.entry.configure(state=state)
-        if enabled:
-            self.save_btn.configure(state=tk.NORMAL)
-            self.delete_btn.configure(state=tk.NORMAL)
-        else:
-            self.save_btn.configure(state=tk.DISABLED)
-            self.delete_btn.configure(state=tk.DISABLED)
+        self.title_entry.setEnabled(enabled)
+        self.category_combo.setEnabled(enabled)
+        self.content_text.setEnabled(enabled)
+        self.keyword_entry.entry.setEnabled(enabled)
+        self.save_btn.setEnabled(enabled)
+        self.delete_btn.setEnabled(enabled)
 
     # ---- 选择笔记 ----
 
-    def _on_select_note(self, event) -> None:
-        selection = self.tree.selection()
-        if not selection:
+    def _on_select_note(self) -> None:
+        row = self.tree.currentRow()
+        if row < 0:
             return
-        note_id = selection[0]
+        item = self.tree.item(row, 0)
+        if not item:
+            return
+        note_id = item.data(Qt.UserRole)
         note = self.manager.get_by_id(note_id)
         if note:
             self._display_note(note)
@@ -238,29 +247,26 @@ class NoteTabView(BasePage):
         self.current_note = note
         self._toggle_detail_editing(True)
 
-        self.title_entry.delete(0, tk.END)
-        self.title_entry.insert(0, note.title)
-
+        self.title_entry.setText(note.title)
         if note.category in self.manager.VALID_CATEGORIES:
-            self.category_combo.set(note.category)
+            self.category_combo.setCurrentText(note.category)
         else:
-            self.category_combo.set("")
-
+            self.category_combo.setCurrentIndex(-1)
         self.keyword_entry.set_keywords(note.keywords)
-
-        self.content_text.delete("1.0", tk.END)
-        self.content_text.insert("1.0", note.content)
+        self.content_text.setPlainText(note.content)
 
     # ---- 新建 ----
 
     def _open_create_dialog(self) -> None:
         fields = [
-            {"name": "title", "label": "标题", "type": "text", "required": True},
-            {"name": "category", "label": "类别", "type": "combobox",
+            {"key": "title", "label": "标题", "type": "text", "required": True},
+            {"key": "category", "label": "类别", "type": "combo",
              "options": self.manager.VALID_CATEGORIES},
-            {"name": "content", "label": "内容", "type": "textarea"},
+            {"key": "content", "label": "内容", "type": "textarea"},
         ]
-        FormDialog(self, "新建笔记", fields, on_save=self._do_create)
+        data = FormDialog.get_form_data(self, "新建笔记", fields)
+        if data:
+            self._do_create(data)
 
     def _do_create(self, data: dict) -> None:
         try:
@@ -271,9 +277,9 @@ class NoteTabView(BasePage):
                 content=data.get("content", "")
             )
             self.refresh()
-            self.set_status(f"笔记「{note.title}」已创建")
+            self._emit_status(f"笔记「{note.title}」已创建")
         except Exception as e:
-            messagebox.showerror("创建失败", str(e))
+            QMessageBox.critical(self, "创建失败", str(e))
 
     # ---- 保存 ----
 
@@ -283,16 +289,16 @@ class NoteTabView(BasePage):
         try:
             self.manager.update_note(
                 self.current_note.id,
-                title=self.title_entry.get().strip(),
-                category=self.category_combo.get(),
+                title=self.title_entry.text().strip(),
+                category=self.category_combo.currentText(),
                 keywords=self.keyword_entry.get_keywords(),
-                content=self.content_text.get("1.0", tk.END).strip()
+                content=self.content_text.toPlainText().strip()
             )
             self.current_note = self.manager.get_by_id(self.current_note.id)
-            self.set_status(f"笔记「{self.current_note.title}」已保存")
+            self._emit_status(f"笔记「{self.current_note.title}」已保存")
             self._refresh_note_list()
         except Exception as e:
-            messagebox.showerror("保存失败", str(e))
+            QMessageBox.critical(self, "保存失败", str(e))
 
     # ---- 删除 ----
 
@@ -305,12 +311,12 @@ class NoteTabView(BasePage):
             self.current_note = None
             self._clear_detail()
             self.refresh()
-            self.set_status("笔记已删除")
+            self._emit_status("笔记已删除")
 
     def _clear_detail(self) -> None:
         self._toggle_detail_editing(False)
-        self.title_entry.delete(0, tk.END)
-        self.content_text.delete("1.0", tk.END)
+        self.title_entry.clear()
+        self.content_text.clear()
         self.keyword_entry.set_keywords([])
 
     # ---- 搜索和筛选 ----
@@ -321,15 +327,14 @@ class NoteTabView(BasePage):
             return
         results = self.manager.search(keyword)
         results = [r for r in results if r.item_type == "note"]
-        self._populate_tree(results)
+        self._populate_note_table(results)
 
-    def _on_filter(self) -> None:
-        category = self.category_filter.get()
+    def _on_filter(self, category: str) -> None:
         if not category or category == "全部":
             self._refresh_note_list()
             return
         results = self.manager.get_by_category(category, item_type="note")
-        self._populate_tree(results)
+        self._populate_note_table(results)
 
     # ---- 数据刷新 ----
 
@@ -337,48 +342,62 @@ class NoteTabView(BasePage):
         self._refresh_note_list()
         self._update_stats()
 
+    def highlight_item(self, item_id: str) -> None:
+        for row in range(self.tree.rowCount()):
+            item = self.tree.item(row, 0)
+            if item and item.data(Qt.UserRole) == item_id:
+                self.tree.selectRow(row)
+                self.tree.scrollToItem(item)
+                return
+
     def _refresh_note_list(self) -> None:
         notes = self.manager.get_all(item_type="note")
-        self._populate_tree(notes)
+        self._populate_note_table(notes)
 
-        # 更新类别筛选
         categories = self.manager.get_all_categories(item_type="note")
-        self.category_filter["values"] = ["全部"] + categories
-        if not self.category_filter.get():
-            self.category_filter.set("全部")
+        self.category_filter.blockSignals(True)
+        self.category_filter.clear()
+        self.category_filter.addItem("全部")
+        self.category_filter.addItems(categories)
+        self.category_filter.setCurrentIndex(0)
+        self.category_filter.blockSignals(False)
 
-    def _populate_tree(self, notes: list[KnowledgeItem]) -> None:
-        self._clear_tree()
+    def _populate_note_table(self, notes: list[KnowledgeItem]) -> None:
+        self.tree.setRowCount(0)
         for n in notes:
-            self.tree.insert("", tk.END, iid=n.id, values=(
+            row = self.tree.rowCount()
+            self.tree.insertRow(row)
+            for col, text in enumerate([
                 n.title,
                 n.category,
                 _format_keywords(n.keywords),
                 n.updated_at[:10] if n.updated_at else n.created_at[:10],
-            ))
+            ]):
+                item = QTableWidgetItem(text)
+                if col == 0:
+                    item.setData(Qt.UserRole, n.id)
+                self.tree.setItem(row, col, item)
 
     def _export_csv(self) -> None:
-        path = filedialog.asksaveasfilename(
-            defaultextension=".csv",
-            filetypes=[("CSV 文件", "*.csv")],
-            initialfile="notes.csv"
+        path, _ = QFileDialog.getSaveFileName(
+            self, "导出笔记数据", "notes.csv", "CSV 文件 (*.csv)"
         )
         if path:
             try:
                 self.manager.export_notes_csv(path)
-                self.set_status(f"笔记数据已导出到 {path}")
+                self._emit_status(f"笔记数据已导出到 {path}")
             except Exception as e:
-                messagebox.showerror("导出失败", str(e))
+                QMessageBox.critical(self, "导出失败", str(e))
 
     def _update_stats(self) -> None:
         stats = self.manager.get_statistics()
         cats = ", ".join(f"{k}:{v}" for k, v in stats["by_category"].items())
-        self.stats_var.set(
-            f"共 {stats['total_notes']} 篇笔记"
-            + (f"  |  {cats}" if cats else "")
-        )
+        text = f"共 {stats['total_notes']} 篇笔记"
+        if cats:
+            text += f"  |  {cats}"
+        self.stats_label.setText(text)
 
-        # 更新类别柱状图（仅笔记）
+        # 更新类别柱状图
         notes = self.manager.get_all(item_type="note")
         by_cat: dict[str, int] = {}
         for n in notes:
@@ -390,6 +409,10 @@ class NoteTabView(BasePage):
         else:
             self.note_bar_chart.set_data([], [])
 
+    def _emit_status(self, text: str) -> None:
+        if self._set_status:
+            self._set_status(text)
+
 
 # ============================================================
 #  EbookTabView — PDF 电子书
@@ -398,77 +421,62 @@ class NoteTabView(BasePage):
 class EbookTabView(BasePage):
     """PDF 电子书子视图。"""
 
-    def __init__(self, parent: tk.Widget, manager: KnowledgeManager, set_status):
+    def __init__(self, manager: KnowledgeManager, set_status, parent=None):
         super().__init__(parent, set_status)
         self.manager = manager
 
         self._build_toolbar()
-        self._build_table()
-        self._build_context_menu([
-            ("打开阅读", self._open_ebook),
-            ("---", None),
-            ("编辑信息", self._open_edit_dialog),
-            ("---", None),
-            ("删除", self._confirm_delete),
-        ])
-        self._build_stats_bar(pady=4)
-
-    # ---- 工具栏 ----
+        self._build_table_columns()
 
     def _build_toolbar(self) -> None:
-        toolbar = tk.Frame(self, bg="#fafafa", pady=6)
-        toolbar.pack(fill=tk.X, padx=12, pady=(12, 0))
+        toolbar = QWidget()
+        toolbar_layout = QHBoxLayout(toolbar)
+        toolbar_layout.setContentsMargins(0, 4, 0, 4)
 
-        self.search_bar = SearchBar(toolbar, on_search=self._on_search)
-        self.search_bar.pack(side=tk.LEFT, padx=4)
+        self.search_bar = SearchBar(placeholder="搜索电子书...")
+        self.search_bar.search_requested.connect(self._on_search)
+        toolbar_layout.addWidget(self.search_bar)
 
-        tk.Label(toolbar, text="类别：", bg="#fafafa",
-                 font=("Microsoft YaHei", 9)).pack(side=tk.LEFT, padx=(8, 2))
+        toolbar_layout.addWidget(QLabel("类别："))
+        self.category_filter = QComboBox()
+        self.category_filter.currentTextChanged.connect(self._on_filter)
+        toolbar_layout.addWidget(self.category_filter)
 
-        self.category_filter = ttk.Combobox(
-            toolbar, state="readonly", width=8,
-            font=("Microsoft YaHei", 9)
-        )
-        self.category_filter.pack(side=tk.LEFT, padx=4)
-        self.category_filter.bind("<<ComboboxSelected>>", lambda e: self._on_filter())
+        toolbar_layout.addStretch()
 
-        import_btn = tk.Button(
-            toolbar, text="+ 导入电子书", command=self._open_import_dialog,
-            font=("Microsoft YaHei", 9), padx=12, cursor="hand2"
-        )
-        import_btn.pack(side=tk.RIGHT, padx=4)
+        import_btn = QPushButton("+ 导入电子书")
+        import_btn.clicked.connect(self._open_import_dialog)
+        toolbar_layout.addWidget(import_btn)
 
-    # ---- 表格 ----
+        self._layout.insertWidget(0, toolbar)
 
-    def _build_table(self) -> None:
-        columns = ("title", "category", "keywords", "size", "created")
-        self.tree = ttk.Treeview(self, columns=columns, show="headings",
-                                 selectmode="browse")
+    def _build_table_columns(self) -> None:
+        self.table.setColumnCount(5)
+        self.table.setHorizontalHeaderLabels([
+            "书名", "类别", "关键词", "大小", "导入时间"
+        ])
+        self.table.horizontalHeader().setSectionResizeMode(0, QHeaderView.Stretch)
+        self.table.doubleClicked.connect(self._open_ebook)
 
-        self.tree.heading("title", text="书名")
-        self.tree.heading("category", text="类别")
-        self.tree.heading("keywords", text="关键词")
-        self.tree.heading("size", text="大小")
-        self.tree.heading("created", text="导入时间")
+    # ---- 右键菜单 ----
 
-        self.tree.column("title", width=180)
-        self.tree.column("category", width=60, anchor=tk.CENTER)
-        self.tree.column("keywords", width=100)
-        self.tree.column("size", width=70, anchor=tk.CENTER)
-        self.tree.column("created", width=100, anchor=tk.CENTER)
-
-        scrollbar = ttk.Scrollbar(self, orient=tk.VERTICAL, command=self.tree.yview)
-        self.tree.configure(yscrollcommand=scrollbar.set)
-
-        self.tree.pack(fill=tk.BOTH, expand=True, padx=12, pady=8)
-        scrollbar.pack(side=tk.RIGHT, fill=tk.Y, padx=(0, 12), pady=8)
-
-        self.tree.bind("<Double-1>", lambda e: self._open_ebook())
+    def _build_context_menu(self) -> QMenu | None:
+        ebook_id = self._get_selected_id()
+        if not ebook_id:
+            return None
+        menu = QMenu(self)
+        menu.addAction("打开阅读", self._open_ebook)
+        menu.addSeparator()
+        menu.addAction("编辑信息", self._open_edit_dialog)
+        menu.addSeparator()
+        menu.addAction("删除", self._confirm_delete)
+        return menu
 
     # ---- 导入 ----
 
     def _open_import_dialog(self) -> None:
-        EbookImportDialog(self, self.manager, on_done=self.refresh)
+        dialog = EbookImportDialog(self.manager, self.refresh, self)
+        dialog.exec()
 
     # ---- 打开 ----
 
@@ -478,9 +486,9 @@ class EbookTabView(BasePage):
             return
         try:
             self.manager.open_ebook(item.id)
-            self.set_status(f"正在打开「{item.title}」...")
+            self.emit_status(f"正在打开「{item.title}」...")
         except Exception as e:
-            messagebox.showerror("打开失败", str(e))
+            QMessageBox.critical(self, "打开失败", str(e))
 
     # ---- 编辑信息 ----
 
@@ -488,9 +496,9 @@ class EbookTabView(BasePage):
         item = self._get_selected()
         if not item:
             return
-
         categories = self.manager.get_all_categories(item_type="ebook") or self.manager.VALID_CATEGORIES
-        dialog = EbookEditDialog(self, item, categories, on_save=lambda d: self._do_edit(item.id, d))
+        dialog = EbookEditDialog(item, categories, lambda d: self._do_edit(item.id, d), self)
+        dialog.exec()
 
     def _do_edit(self, ebook_id: str, data: dict) -> None:
         try:
@@ -499,9 +507,9 @@ class EbookTabView(BasePage):
                 category=data["category"], keywords=data["keywords"]
             )
             self.refresh()
-            self.set_status(f"电子书「{data['title']}」信息已更新")
+            self.emit_status(f"电子书「{data['title']}」信息已更新")
         except Exception as e:
-            messagebox.showerror("编辑失败", str(e))
+            QMessageBox.critical(self, "编辑失败", str(e))
 
     # ---- 删除 ----
 
@@ -510,18 +518,20 @@ class EbookTabView(BasePage):
         if not item:
             return
 
-        result = messagebox.askyesnocancel(
-            "确认删除",
+        from PySide6.QtWidgets import QMessageBox as QMB
+        result = QMB.question(
+            self, "确认删除",
             f"确定要删除电子书「{item.title}」吗？\n\n"
-            f"选「是」同时删除 PDF 文件\n"
-            f"选「否」仅删除记录，保留文件"
+            f"选「Yes」同时删除 PDF 文件\n"
+            f"选「No」仅删除记录，保留文件",
+            QMB.Yes | QMB.No | QMB.Cancel, QMB.Cancel
         )
-        if result is None:
-            return  # 取消
-        delete_file = result  # True=是, False=否
+        if result == QMB.Cancel:
+            return
+        delete_file = result == QMB.Yes
         self.manager.delete_item(item.id, delete_file=delete_file)
         self.refresh()
-        self.set_status(f"电子书「{item.title}」已删除")
+        self.emit_status(f"电子书「{item.title}」已删除")
 
     # ---- 搜索筛选 ----
 
@@ -531,44 +541,47 @@ class EbookTabView(BasePage):
             return
         results = self.manager.search(keyword)
         results = [r for r in results if r.item_type == "ebook"]
-        self._populate_tree(results)
+        self._populate_table(results)
 
-    def _on_filter(self) -> None:
-        category = self.category_filter.get()
+    def _on_filter(self, category: str) -> None:
         if not category or category == "全部":
             self.refresh()
             return
         results = self.manager.get_by_category(category, item_type="ebook")
-        self._populate_tree(results)
+        self._populate_table(results)
 
     # ---- 数据刷新 ----
 
     def refresh(self) -> None:
         ebooks = self.manager.get_all(item_type="ebook")
-        self._populate_tree(ebooks)
+        self._populate_table(ebooks)
 
         categories = self.manager.get_all_categories(item_type="ebook")
-        self.category_filter["values"] = ["全部"] + categories
-        if not self.category_filter.get():
-            self.category_filter.set("全部")
+        self.category_filter.blockSignals(True)
+        self.category_filter.clear()
+        self.category_filter.addItem("全部")
+        self.category_filter.addItems(categories)
+        self.category_filter.setCurrentIndex(0)
+        self.category_filter.blockSignals(False)
 
         stats = self.manager.get_statistics()
-        self.stats_var.set(f"共 {stats['total_ebooks']} 本电子书")
+        self._set_stats_text(f"共 {stats['total_ebooks']} 本电子书")
 
-    def _populate_tree(self, ebooks: list[KnowledgeItem]) -> None:
-        self._clear_tree()
+    def _populate_table(self, ebooks: list[KnowledgeItem]) -> None:
+        self._clear_table()
         for eb in ebooks:
-            self.tree.insert("", tk.END, iid=eb.id, values=(
+            self._add_row([
                 eb.title,
                 eb.category,
                 _format_keywords(eb.keywords),
                 _format_size(eb.file_size),
                 eb.created_at[:10] if eb.created_at else "-",
-            ))
+            ], item_id=eb.id)
 
     def _get_selected(self) -> KnowledgeItem | None:
-        ebook_id = self._get_selected_id("请先选中一本电子书")
+        ebook_id = self._get_selected_id()
         if not ebook_id:
+            QMessageBox.information(self, "提示", "请先选中一本电子书")
             return None
         return self.manager.get_by_id(ebook_id)
 
@@ -577,181 +590,131 @@ class EbookTabView(BasePage):
 #  EbookImportDialog — 导入电子书
 # ============================================================
 
-class EbookImportDialog(tk.Toplevel):
+class EbookImportDialog(QDialog):
     """PDF 电子书导入对话框。"""
 
-    def __init__(self, parent: tk.Widget, manager: KnowledgeManager,
-                 on_done):
+    def __init__(self, manager: KnowledgeManager, on_done, parent=None):
         super().__init__(parent)
-        self.title("导入 PDF 电子书")
-        self.resizable(False, False)
-        self.transient(parent)
-        self.grab_set()
-
+        self.setWindowTitle("导入 PDF 电子书")
+        self.setModal(True)
         self.manager = manager
         self.on_done = on_done
-        self.source_path: str = ""
+        self.source_path = ""
+        self.setMinimumWidth(420)
 
         self._build()
 
     def _build(self) -> None:
-        form = tk.Frame(self, padx=20, pady=12)
-        form.pack(fill=tk.BOTH, expand=True)
+        layout = QFormLayout(self)
+        layout.setSpacing(8)
 
         # PDF 文件选择
-        tk.Label(form, text="PDF 文件：", font=("Microsoft YaHei", 10),
-                 anchor=tk.E, width=10).grid(row=0, column=0, sticky=tk.E, padx=(0, 8), pady=4)
+        file_row = QHBoxLayout()
+        self.file_label = QLabel("未选择文件")
+        self.file_label.setStyleSheet("color: #999999;")
+        file_row.addWidget(self.file_label)
 
-        file_row = tk.Frame(form)
-        file_row.grid(row=0, column=1, sticky=tk.EW, pady=4)
-
-        self.file_var = tk.StringVar(value="未选择文件")
-        file_label = tk.Label(file_row, textvariable=self.file_var,
-                             font=("Microsoft YaHei", 9), fg="#999999")
-        file_label.pack(side=tk.LEFT, fill=tk.X, expand=True)
-
-        browse_btn = tk.Button(
-            file_row, text="浏览...", command=self._browse_file,
-            font=("Microsoft YaHei", 9), cursor="hand2"
-        )
-        browse_btn.pack(side=tk.RIGHT)
+        browse_btn = QPushButton("浏览...")
+        browse_btn.clicked.connect(self._browse_file)
+        file_row.addWidget(browse_btn)
+        layout.addRow("PDF 文件：", file_row)
 
         # 文件大小
-        self.size_var = tk.StringVar(value="")
-        size_label = tk.Label(form, textvariable=self.size_var,
-                             font=("Microsoft YaHei", 9), fg="#666666")
-        size_label.grid(row=1, column=1, sticky=tk.W, pady=(0, 8))
+        self.size_label = QLabel("")
+        self.size_label.setStyleSheet("color: #666666;")
+        layout.addRow("", self.size_label)
 
         # 书名
-        tk.Label(form, text="书名：", font=("Microsoft YaHei", 10),
-                 anchor=tk.E, width=10).grid(row=2, column=0, sticky=tk.E, padx=(0, 8), pady=4)
-        self.title_entry = tk.Entry(form, font=("Microsoft YaHei", 10))
-        self.title_entry.grid(row=2, column=1, sticky=tk.EW, pady=4)
+        self.title_entry = QLineEdit()
+        layout.addRow("书名：", self.title_entry)
 
         # 类别
-        tk.Label(form, text="类别：", font=("Microsoft YaHei", 10),
-                 anchor=tk.E, width=10).grid(row=3, column=0, sticky=tk.E, padx=(0, 8), pady=4)
-        self.category_combo = ttk.Combobox(
-            form, values=self.manager.VALID_CATEGORIES,
-            state="readonly", font=("Microsoft YaHei", 10)
-        )
-        self.category_combo.grid(row=3, column=1, sticky=tk.EW, pady=4)
-        self.category_combo.set("技术")
+        self.category_combo = QComboBox()
+        self.category_combo.addItems(self.manager.VALID_CATEGORIES)
+        self.category_combo.setCurrentText("技术")
+        layout.addRow("类别：", self.category_combo)
 
         # 关键词
-        tk.Label(form, text="关键词：", font=("Microsoft YaHei", 10),
-                 anchor=tk.E, width=10).grid(row=4, column=0, sticky=tk.NE, padx=(0, 8), pady=4)
-        self.keyword_entry = KeywordEntry(form)
-        self.keyword_entry.grid(row=4, column=1, sticky=tk.EW, pady=4)
-
-        form.columnconfigure(1, weight=1)
+        self.keyword_entry = KeywordEntry()
+        layout.addRow("关键词：", self.keyword_entry)
 
         # 按钮
-        btn_frame = tk.Frame(self, pady=10)
-        btn_frame.pack(fill=tk.X)
-
-        cancel_btn = tk.Button(btn_frame, text="取消", command=self.destroy,
-                               font=("Microsoft YaHei", 9), padx=16, cursor="hand2")
-        cancel_btn.pack(side=tk.RIGHT, padx=8)
-
-        import_btn = tk.Button(btn_frame, text="导入", command=self._do_import,
-                               font=("Microsoft YaHei", 9), padx=16, cursor="hand2")
-        import_btn.pack(side=tk.RIGHT)
+        buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        buttons.button(QDialogButtonBox.Ok).setText("导入")
+        buttons.accepted.connect(self._do_import)
+        buttons.rejected.connect(self.reject)
+        layout.addRow(buttons)
 
     def _browse_file(self) -> None:
-        path = filedialog.askopenfilename(
-            filetypes=[("PDF 文件", "*.pdf"), ("所有文件", "*.*")]
+        path, _ = QFileDialog.getOpenFileName(
+            self, "选择 PDF 文件", "", "PDF 文件 (*.pdf);;所有文件 (*.*)"
         )
         if path:
             self.source_path = path
             basename = os.path.basename(path)
-            self.file_var.set(basename if len(basename) < 50 else basename[:47] + "...")
+            self.file_label.setText(basename if len(basename) < 50 else basename[:47] + "...")
 
             size = os.path.getsize(path)
-            self.size_var.set(f"文件大小：{_format_size(size)}")
+            self.size_label.setText(f"文件大小：{_format_size(size)}")
 
-            # 自动填充书名
             name = os.path.splitext(basename)[0]
-            self.title_entry.delete(0, tk.END)
-            self.title_entry.insert(0, name)
+            self.title_entry.setText(name)
 
     def _do_import(self) -> None:
         if not self.source_path:
-            messagebox.showwarning("提示", "请先选择 PDF 文件")
+            QMessageBox.warning(self, "提示", "请先选择 PDF 文件")
             return
         try:
             self.manager.import_ebook(
                 source_path=self.source_path,
-                title=self.title_entry.get().strip(),
-                category=self.category_combo.get(),
+                title=self.title_entry.text().strip(),
+                category=self.category_combo.currentText(),
                 keywords=self.keyword_entry.get_keywords()
             )
             self.on_done()
-            self.destroy()
+            self.accept()
         except Exception as e:
-            messagebox.showerror("导入失败", str(e))
+            QMessageBox.critical(self, "导入失败", str(e))
 
 
 # ============================================================
 #  EbookEditDialog — 编辑电子书信息
 # ============================================================
 
-class EbookEditDialog(tk.Toplevel):
+class EbookEditDialog(QDialog):
     """编辑电子书元数据对话框。"""
 
-    def __init__(self, parent: tk.Widget, item: KnowledgeItem,
-                 categories: list[str], on_save):
+    def __init__(self, item: KnowledgeItem, categories: list[str], on_save, parent=None):
         super().__init__(parent)
-        self.title("编辑电子书信息")
-        self.resizable(False, False)
-        self.transient(parent)
-        self.grab_set()
+        self.setWindowTitle("编辑电子书信息")
+        self.setModal(True)
+        self.setMinimumWidth(380)
 
-        self.on_save = on_save
+        layout = QFormLayout(self)
+        layout.setSpacing(8)
 
-        form = tk.Frame(self, padx=20, pady=12)
-        form.pack(fill=tk.BOTH, expand=True)
+        self.title_entry = QLineEdit(item.title)
+        layout.addRow("书名：", self.title_entry)
 
-        # 书名
-        tk.Label(form, text="书名：", font=("Microsoft YaHei", 10),
-                 anchor=tk.E, width=10).grid(row=0, column=0, sticky=tk.E, padx=(0, 8), pady=4)
-        title_entry = tk.Entry(form, font=("Microsoft YaHei", 10))
-        title_entry.insert(0, item.title)
-        title_entry.grid(row=0, column=1, sticky=tk.EW, pady=4)
+        self.cat_combo = QComboBox()
+        self.cat_combo.addItems(categories)
+        self.cat_combo.setCurrentText(item.category)
+        layout.addRow("类别：", self.cat_combo)
 
-        # 类别
-        tk.Label(form, text="类别：", font=("Microsoft YaHei", 10),
-                 anchor=tk.E, width=10).grid(row=1, column=0, sticky=tk.E, padx=(0, 8), pady=4)
-        cat_combo = ttk.Combobox(form, values=categories, state="readonly",
-                                 font=("Microsoft YaHei", 10))
-        cat_combo.set(item.category)
-        cat_combo.grid(row=1, column=1, sticky=tk.EW, pady=4)
+        self.kw_entry = KeywordEntry()
+        self.kw_entry.set_keywords(item.keywords)
+        layout.addRow("关键词：", self.kw_entry)
 
-        # 关键词
-        tk.Label(form, text="关键词：", font=("Microsoft YaHei", 10),
-                 anchor=tk.E, width=10).grid(row=2, column=0, sticky=tk.NE, padx=(0, 8), pady=4)
-        kw_entry = KeywordEntry(form)
-        kw_entry.set_keywords(item.keywords)
-        kw_entry.grid(row=2, column=1, sticky=tk.EW, pady=4)
+        buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        buttons.button(QDialogButtonBox.Ok).setText("保存")
+        buttons.accepted.connect(lambda: self._save(on_save))
+        buttons.rejected.connect(self.reject)
+        layout.addRow(buttons)
 
-        form.columnconfigure(1, weight=1)
-
-        # 按钮
-        btn_frame = tk.Frame(self, pady=10)
-        btn_frame.pack(fill=tk.X)
-
-        def save():
-            self.on_save({
-                "title": title_entry.get().strip(),
-                "category": cat_combo.get(),
-                "keywords": kw_entry.get_keywords(),
-            })
-            self.destroy()
-
-        cancel_btn = tk.Button(btn_frame, text="取消", command=self.destroy,
-                               font=("Microsoft YaHei", 9), padx=16, cursor="hand2")
-        cancel_btn.pack(side=tk.RIGHT, padx=8)
-
-        save_btn = tk.Button(btn_frame, text="保存", command=save,
-                             font=("Microsoft YaHei", 9), padx=16, cursor="hand2")
-        save_btn.pack(side=tk.RIGHT)
+    def _save(self, on_save) -> None:
+        on_save({
+            "title": self.title_entry.text().strip(),
+            "category": self.cat_combo.currentText(),
+            "keywords": self.kw_entry.get_keywords(),
+        })
+        self.accept()

@@ -1,8 +1,13 @@
-"""待办事项管理页面。"""
+"""待办事项管理页面 — PySide6 版本。"""
 
-import tkinter as tk
-from tkinter import ttk, filedialog, messagebox
 from datetime import datetime
+
+from PySide6.QtWidgets import (
+    QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QComboBox, QLabel,
+    QTableWidgetItem, QFileDialog, QMessageBox, QMenu, QHeaderView
+)
+from PySide6.QtCore import Qt
+from PySide6.QtGui import QColor
 
 from Services.TodoManager import TodoManager
 from Models.TodoItem import TodoItem
@@ -15,137 +20,106 @@ PRIORITY_LABELS = {"high": "高", "mid": "中", "low": "低"}
 class TodoPage(BasePage):
     """待办事项管理页面，三段式布局。"""
 
-    def __init__(self, parent: tk.Widget, set_status):
+    def __init__(self, parent=None, set_status=None):
         super().__init__(parent, set_status)
         self.manager = TodoManager()
 
         self._build_toolbar()
-        self._build_table()
-        self._build_context_menu([
-            ("切换完成状态", self._toggle_complete),
-            ("---", None),
-            ("编辑", self._open_edit_dialog),
-            ("---", None),
-            ("删除", self._confirm_delete),
-        ])
-        self._build_stats_bar()
+        self._build_table_columns()
+        self._build_context_menu()
 
     # ---- 工具栏 ----
 
     def _build_toolbar(self) -> None:
-        toolbar = tk.Frame(self, bg="#fafafa", pady=8)
-        toolbar.pack(fill=tk.X, padx=12, pady=(12, 0))
+        toolbar = QWidget()
+        toolbar_layout = QHBoxLayout(toolbar)
+        toolbar_layout.setContentsMargins(0, 4, 0, 4)
 
-        self.search_bar = SearchBar(toolbar, on_search=self._on_search)
-        self.search_bar.pack(side=tk.LEFT, padx=4)
+        self.search_bar = SearchBar(placeholder="搜索待办...")
+        self.search_bar.search_requested.connect(self._on_search)
+        toolbar_layout.addWidget(self.search_bar)
 
-        tk.Label(toolbar, text="状态：", bg="#fafafa",
-                 font=("Microsoft YaHei", 9)).pack(side=tk.LEFT, padx=(8, 2))
-        self.status_filter = ttk.Combobox(
-            toolbar, values=["全部", "未完成", "已完成"],
-            state="readonly", width=8, font=("Microsoft YaHei", 9)
-        )
-        self.status_filter.pack(side=tk.LEFT, padx=4)
-        self.status_filter.set("未完成")
-        self.status_filter.bind("<<ComboboxSelected>>", lambda e: self._on_filter())
+        toolbar_layout.addWidget(QLabel("状态："))
+        self.status_filter = QComboBox()
+        self.status_filter.addItems(["未完成", "已完成", "全部"])
+        self.status_filter.currentTextChanged.connect(self._on_filter)
+        toolbar_layout.addWidget(self.status_filter)
 
-        tk.Label(toolbar, text="优先级：", bg="#fafafa",
-                 font=("Microsoft YaHei", 9)).pack(side=tk.LEFT, padx=(8, 2))
-        self.priority_filter = ttk.Combobox(
-            toolbar, values=["全部", "高", "中", "低"],
-            state="readonly", width=6, font=("Microsoft YaHei", 9)
-        )
-        self.priority_filter.pack(side=tk.LEFT, padx=4)
-        self.priority_filter.set("全部")
-        self.priority_filter.bind("<<ComboboxSelected>>", lambda e: self._on_filter())
+        toolbar_layout.addWidget(QLabel("优先级："))
+        self.priority_filter = QComboBox()
+        self.priority_filter.addItems(["全部", "高", "中", "低"])
+        self.priority_filter.currentTextChanged.connect(self._on_filter)
+        toolbar_layout.addWidget(self.priority_filter)
 
-        tk.Label(toolbar, text="类别：", bg="#fafafa",
-                 font=("Microsoft YaHei", 9)).pack(side=tk.LEFT, padx=(8, 2))
-        self.category_filter = ttk.Combobox(
-            toolbar, state="readonly", width=8, font=("Microsoft YaHei", 9)
-        )
-        self.category_filter.pack(side=tk.LEFT, padx=4)
-        self.category_filter.bind("<<ComboboxSelected>>", lambda e: self._on_filter())
+        toolbar_layout.addWidget(QLabel("类别："))
+        self.category_filter = QComboBox()
+        self.category_filter.currentTextChanged.connect(self._on_filter)
+        toolbar_layout.addWidget(self.category_filter)
 
-        del_done_btn = tk.Button(
-            toolbar, text="删除已完成", command=self._batch_delete_completed,
-            font=("Microsoft YaHei", 9), padx=12, cursor="hand2"
-        )
-        del_done_btn.pack(side=tk.RIGHT, padx=4)
+        toolbar_layout.addStretch()
 
-        import_btn = tk.Button(
-            toolbar, text="导入CSV", command=self._import_csv,
-            font=("Microsoft YaHei", 9), padx=12, cursor="hand2"
-        )
-        import_btn.pack(side=tk.RIGHT, padx=4)
+        del_done_btn = QPushButton("删除已完成")
+        del_done_btn.clicked.connect(self._batch_delete_completed)
+        toolbar_layout.addWidget(del_done_btn)
 
-        export_btn = tk.Button(
-            toolbar, text="导出CSV", command=self._export_csv,
-            font=("Microsoft YaHei", 9), padx=12, cursor="hand2"
-        )
-        export_btn.pack(side=tk.RIGHT, padx=4)
+        import_btn = QPushButton("导入CSV")
+        import_btn.clicked.connect(self._import_csv)
+        toolbar_layout.addWidget(import_btn)
 
-        ical_btn = tk.Button(
-            toolbar, text="导出iCal", command=self._export_icalendar,
-            font=("Microsoft YaHei", 9), padx=12, cursor="hand2"
-        )
-        ical_btn.pack(side=tk.RIGHT, padx=4)
+        export_btn = QPushButton("导出CSV")
+        export_btn.clicked.connect(self._export_csv)
+        toolbar_layout.addWidget(export_btn)
 
-        add_btn = tk.Button(
-            toolbar, text="+ 添加待办", command=self._open_add_dialog,
-            font=("Microsoft YaHei", 9), padx=12, cursor="hand2"
-        )
-        add_btn.pack(side=tk.RIGHT, padx=4)
+        ical_btn = QPushButton("导出iCal")
+        ical_btn.clicked.connect(self._export_icalendar)
+        toolbar_layout.addWidget(ical_btn)
+
+        add_btn = QPushButton("+ 添加待办")
+        add_btn.clicked.connect(self._open_add_dialog)
+        toolbar_layout.addWidget(add_btn)
+
+        self._layout.insertWidget(0, toolbar)
 
     # ---- 表格 ----
 
-    def _build_table(self) -> None:
-        columns = ("completed", "title", "priority", "category", "due_date", "created")
-        self.tree = ttk.Treeview(self, columns=columns, show="headings",
-                                 selectmode="browse")
+    def _build_table_columns(self) -> None:
+        self.table.setColumnCount(6)
+        self.table.setHorizontalHeaderLabels([
+            "✓", "标题", "优先级", "类别", "截止日期", "创建时间"
+        ])
+        self.table.horizontalHeader().setSectionResizeMode(1, QHeaderView.Stretch)
+        self.table.doubleClicked.connect(self._toggle_complete)
 
-        self.tree.heading("completed", text="✓")
-        self.tree.heading("title", text="标题")
-        self.tree.heading("priority", text="优先级")
-        self.tree.heading("category", text="类别")
-        self.tree.heading("due_date", text="截止日期")
-        self.tree.heading("created", text="创建时间")
+    # ---- 右键菜单 ----
 
-        self.tree.column("completed", width=30, anchor=tk.CENTER)
-        self.tree.column("title", width=200)
-        self.tree.column("priority", width=60, anchor=tk.CENTER)
-        self.tree.column("category", width=80, anchor=tk.CENTER)
-        self.tree.column("due_date", width=90, anchor=tk.CENTER)
-        self.tree.column("created", width=100, anchor=tk.CENTER)
-
-        scrollbar = ttk.Scrollbar(self, orient=tk.VERTICAL, command=self.tree.yview)
-        self.tree.configure(yscrollcommand=scrollbar.set)
-
-        self.tree.pack(fill=tk.BOTH, expand=True, padx=12, pady=8)
-        scrollbar.pack(side=tk.RIGHT, fill=tk.Y, padx=(0, 12), pady=8)
-
-        # 颜色标签
-        self.tree.tag_configure("overdue", foreground="#c0392b")
-        self.tree.tag_configure("high_priority", background="#fef0e7")
-        self.tree.tag_configure("completed", foreground="#999999")
-
-        self.tree.bind("<Double-1>", lambda e: self._toggle_complete())
+    def _build_context_menu(self) -> QMenu | None:
+        todo_id = self._get_selected_id()
+        if not todo_id:
+            return None
+        menu = QMenu(self)
+        menu.addAction("切换完成状态", self._toggle_complete)
+        menu.addSeparator()
+        menu.addAction("编辑", self._open_edit_dialog)
+        menu.addSeparator()
+        menu.addAction("删除", self._confirm_delete)
+        return menu
 
     # ---- 添加 ----
 
     def _open_add_dialog(self) -> None:
-        today = datetime.now().strftime("%Y-%m-%d")
         fields = [
-            {"name": "title", "label": "标题", "type": "text", "required": True},
-            {"name": "priority", "label": "优先级", "type": "combobox",
+            {"key": "title", "label": "标题", "type": "text", "required": True},
+            {"key": "priority", "label": "优先级", "type": "combo",
              "options": ["mid", "high", "low"]},
-            {"name": "category", "label": "类别", "type": "combobox",
+            {"key": "category", "label": "类别", "type": "combo",
              "options": self.manager.VALID_CATEGORIES},
-            {"name": "due_date", "label": "截止日期", "type": "text"},
-            {"name": "description", "label": "描述", "type": "textarea"},
+            {"key": "due_date", "label": "截止日期", "type": "text"},
+            {"key": "description", "label": "描述", "type": "textarea"},
         ]
-        FormDialog(self, "添加待办", fields, on_save=self._do_add,
-                   initial_data={"priority": "mid", "due_date": ""})
+        data = FormDialog.get_form_data(self, "添加待办", fields,
+                                         initial_data={"priority": "mid"})
+        if data:
+            self._do_add(data)
 
     def _do_add(self, data: dict) -> None:
         try:
@@ -157,9 +131,9 @@ class TodoPage(BasePage):
                 category=data.get("category", ""),
             )
             self.refresh()
-            self.set_status(f"待办「{data['title']}」已添加")
+            self.emit_status(f"待办「{data['title']}」已添加")
         except Exception as e:
-            messagebox.showerror("添加失败", str(e))
+            QMessageBox.critical(self, "添加失败", str(e))
 
     # ---- 切换完成 ----
 
@@ -171,9 +145,9 @@ class TodoPage(BasePage):
             updated = self.manager.toggle_complete(item.id)
             action = "已完成" if updated.completed else "已取消完成"
             self.refresh()
-            self.set_status(f"待办「{updated.title}」{action}")
+            self.emit_status(f"待办「{updated.title}」{action}")
         except Exception as e:
-            messagebox.showerror("操作失败", str(e))
+            QMessageBox.critical(self, "操作失败", str(e))
 
     # ---- 编辑 ----
 
@@ -183,13 +157,13 @@ class TodoPage(BasePage):
             return
 
         fields = [
-            {"name": "title", "label": "标题", "type": "text", "required": True},
-            {"name": "priority", "label": "优先级", "type": "combobox",
+            {"key": "title", "label": "标题", "type": "text", "required": True},
+            {"key": "priority", "label": "优先级", "type": "combo",
              "options": self.manager.VALID_PRIORITIES},
-            {"name": "category", "label": "类别", "type": "combobox",
+            {"key": "category", "label": "类别", "type": "combo",
              "options": self.manager.VALID_CATEGORIES},
-            {"name": "due_date", "label": "截止日期", "type": "text"},
-            {"name": "description", "label": "描述", "type": "textarea"},
+            {"key": "due_date", "label": "截止日期", "type": "text"},
+            {"key": "description", "label": "描述", "type": "textarea"},
         ]
         initial = {
             "title": item.title,
@@ -198,9 +172,9 @@ class TodoPage(BasePage):
             "due_date": item.due_date,
             "description": item.description,
         }
-        FormDialog(self, "编辑待办", fields,
-                   on_save=lambda d: self._do_edit(item.id, d),
-                   initial_data=initial)
+        data = FormDialog.get_form_data(self, "编辑待办", fields, initial)
+        if data:
+            self._do_edit(item.id, data)
 
     def _do_edit(self, todo_id: str, data: dict) -> None:
         try:
@@ -213,9 +187,9 @@ class TodoPage(BasePage):
                 category=data.get("category", ""),
             )
             self.refresh()
-            self.set_status(f"待办「{data['title']}」已更新")
+            self.emit_status(f"待办「{data['title']}」已更新")
         except Exception as e:
-            messagebox.showerror("编辑失败", str(e))
+            QMessageBox.critical(self, "编辑失败", str(e))
 
     # ---- 删除 ----
 
@@ -227,15 +201,15 @@ class TodoPage(BasePage):
                               f"确定要删除待办「{item.title}」吗？"):
             self.manager.delete_todo(item.id)
             self.refresh()
-            self.set_status(f"待办「{item.title}」已删除")
+            self.emit_status(f"待办「{item.title}」已删除")
 
     def _batch_delete_completed(self) -> None:
         count = self.manager.batch_delete_completed()
         if count > 0:
             self.refresh()
-            self.set_status(f"已删除 {count} 条已完成的待办")
+            self.emit_status(f"已删除 {count} 条已完成的待办")
         else:
-            messagebox.showinfo("提示", "没有已完成的待办")
+            QMessageBox.information(self, "提示", "没有已完成的待办")
 
     # ---- 搜索和筛选 ----
 
@@ -244,20 +218,20 @@ class TodoPage(BasePage):
             self.refresh()
             return
         results = self.manager.search(keyword)
-        self._populate_tree(results)
+        self._populate_table(results)
 
     def _on_filter(self) -> None:
-        self._refresh_tree()
+        self._refresh_table()
 
     # ---- 数据加载 ----
 
     def refresh(self) -> None:
-        self._refresh_tree()
+        self._refresh_table()
         self._update_filter_options()
         self._update_stats()
 
-    def _refresh_tree(self) -> None:
-        status_val = self.status_filter.get()
+    def _refresh_table(self) -> None:
+        status_val = self.status_filter.currentText()
         status = None
         if status_val == "未完成":
             status = "active"
@@ -266,46 +240,51 @@ class TodoPage(BasePage):
 
         items = self.manager.get_all(status=status)
 
-        # 优先级筛选
-        prio_val = self.priority_filter.get()
+        prio_val = self.priority_filter.currentText()
         if prio_val in ("高", "中", "低"):
             prio_map = {"高": "high", "中": "mid", "低": "low"}
             items = [i for i in items if i.priority == prio_map[prio_val]]
 
-        # 类别筛选
-        cat_val = self.category_filter.get()
+        cat_val = self.category_filter.currentText()
         if cat_val and cat_val != "全部":
             items = [i for i in items if i.category == cat_val]
 
-        self._populate_tree(items)
+        self._populate_table(items)
 
-    def _populate_tree(self, items: list[TodoItem]) -> None:
-        self._clear_tree()
+    def _populate_table(self, items: list[TodoItem]) -> None:
+        self._clear_table()
 
         for item in items:
-            tags = []
-            if item.completed:
-                tags.append("completed")
-            elif item.is_overdue():
-                tags.append("overdue")
-            elif item.priority == "high":
-                tags.append("high_priority")
-
-            self.tree.insert("", tk.END, iid=item.id, values=(
+            self._add_row([
                 "✓" if item.completed else "☐",
                 item.title,
                 PRIORITY_LABELS.get(item.priority, item.priority),
                 item.category or "-",
                 item.due_date or "-",
                 item.created_at[:10] if item.created_at else "-",
-            ), tags=tuple(tags))
+            ], item_id=item.id)
+
+            row = self.table.rowCount() - 1
+            for col in range(self.table.columnCount()):
+                cell = self.table.item(row, col)
+                if not cell:
+                    continue
+                if item.completed:
+                    cell.setForeground(QColor("#999999"))
+                elif item.is_overdue():
+                    cell.setForeground(QColor("#c0392b"))
+                elif item.priority == "high":
+                    cell.setBackground(QColor("#fef0e7"))
 
     def _update_filter_options(self) -> None:
         all_items = self.manager.get_all()
         categories = sorted({i.category for i in all_items if i.category})
-        self.category_filter["values"] = ["全部"] + categories
-        if not self.category_filter.get():
-            self.category_filter.set("全部")
+        self.category_filter.blockSignals(True)
+        self.category_filter.clear()
+        self.category_filter.addItem("全部")
+        self.category_filter.addItems(categories)
+        self.category_filter.setCurrentIndex(0)
+        self.category_filter.blockSignals(False)
 
     def _update_stats(self) -> None:
         stats = self.manager.get_statistics()
@@ -316,56 +295,54 @@ class TodoPage(BasePage):
             parts.append(f"已完成: {stats['completed']}")
         if stats["overdue"] > 0:
             parts.append(f"逾期: {stats['overdue']}")
-        self.stats_var.set("  |  ".join(parts))
+        self._set_stats_text("  |  ".join(parts))
 
     def _get_selected(self) -> TodoItem | None:
         todo_id = self._get_selected_id()
         if not todo_id:
+            QMessageBox.information(self, "提示", "请先选中一条记录")
             return None
         return self.manager.get_by_id(todo_id)
 
     # ---- CSV 导入导出 ----
 
     def _export_csv(self) -> None:
-        path = filedialog.asksaveasfilename(
-            defaultextension=".csv",
-            filetypes=[("CSV 文件", "*.csv")],
-            initialfile="todos.csv"
+        path, _ = QFileDialog.getSaveFileName(
+            self, "导出待办数据", "todos.csv", "CSV 文件 (*.csv)"
         )
         if path:
             try:
                 self.manager.export_csv(path)
-                self.set_status(f"待办数据已导出到 {path}")
+                self.emit_status(f"待办数据已导出到 {path}")
             except Exception as e:
-                messagebox.showerror("导出失败", str(e))
+                QMessageBox.critical(self, "导出失败", str(e))
 
     def _export_icalendar(self) -> None:
-        path = filedialog.asksaveasfilename(
-            defaultextension=".ics",
-            filetypes=[("iCalendar 文件", "*.ics")],
-            initialfile="todos.ics"
+        path, _ = QFileDialog.getSaveFileName(
+            self, "导出 iCalendar", "todos.ics", "iCalendar 文件 (*.ics)"
         )
         if path:
             try:
                 self.manager.export_icalendar(path)
-                self.set_status(f"待办已导出为 iCalendar 至 {path}")
+                self.emit_status(f"待办已导出为 iCalendar 至 {path}")
             except Exception as e:
-                messagebox.showerror("导出失败", str(e))
+                QMessageBox.critical(self, "导出失败", str(e))
 
     def _import_csv(self) -> None:
-        path = filedialog.askopenfilename(
-            filetypes=[("CSV 文件", "*.csv")]
+        path, _ = QFileDialog.getOpenFileName(
+            self, "导入待办数据", "", "CSV 文件 (*.csv)"
         )
         if path:
-            CSVPreviewDialog(self, path, on_confirm=self._do_import_csv)
+            dialog = CSVPreviewDialog(self, path, on_confirm=self._do_import_csv)
+            dialog.exec()
 
     def _do_import_csv(self, path: str) -> None:
         try:
             result = self.manager.import_csv(path)
             self.refresh()
             msg = f"导入完成：成功 {result['success']} 条"
-            if result["failed"]:
+            if result.get("failed"):
                 msg += f"，失败 {result['failed']} 条"
-            self.set_status(msg)
+            self.emit_status(msg)
         except Exception as e:
-            messagebox.showerror("导入失败", str(e))
+            QMessageBox.critical(self, "导入失败", str(e))
