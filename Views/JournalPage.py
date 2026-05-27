@@ -1,188 +1,172 @@
-"""日记页面。"""
+"""日记页面 — PySide6 版本。"""
 
-import tkinter as tk
-from tkinter import messagebox, filedialog
 from datetime import datetime
 
-from .BasePage import BasePage
-from .Widgets import CalendarNav, SearchBar
+from PySide6.QtWidgets import (
+    QWidget, QVBoxLayout, QHBoxLayout, QSplitter, QPushButton,
+    QLabel, QLineEdit, QTextEdit, QMessageBox, QFileDialog
+)
+from PySide6.QtCore import Qt
+from PySide6.QtGui import QFont
+
 from Services.JournalManager import JournalManager
 from Services.StatusManager import StatusManager
 from Services.ConfigManager import ConfigManager
+from .Widgets import CalendarNav, SearchBar
 
 
-class JournalPage(BasePage):
+class JournalPage(QWidget):
     """日记页面：左侧日历导航 + 右侧编辑器。"""
 
-    def __init__(self, parent: tk.Widget, set_status):
-        super().__init__(parent, set_status)
+    def __init__(self, parent=None, set_status=None):
+        super().__init__(parent)
         self.manager = JournalManager()
         self.status_manager = StatusManager()
         self.config_manager = ConfigManager()
         self._current_date: str | None = None
+        self._set_status = set_status
 
-        self._build_toolbar()
-        self._build_body()
+        self._build()
 
-        # 默认选中今天
         today = datetime.now().strftime("%Y-%m-%d")
         self.calendar.select_date(today)
 
-    # ---- 工具栏 ----
+    def _build(self) -> None:
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
 
-    def _build_toolbar(self) -> None:
-        toolbar = tk.Frame(self, bg="#fafafa", pady=6, padx=8)
-        toolbar.pack(fill=tk.X)
+        # 工具栏
+        toolbar = QWidget()
+        toolbar_layout = QHBoxLayout(toolbar)
+        toolbar_layout.setContentsMargins(8, 6, 8, 6)
 
-        self.search_bar = SearchBar(
-            toolbar, on_search=self._on_search, placeholder="搜索日记..."
-        )
-        self.search_bar.pack(side=tk.LEFT, padx=(0, 8))
+        self.search_bar = SearchBar(placeholder="搜索日记...")
+        self.search_bar.search_requested.connect(self._on_search)
+        toolbar_layout.addWidget(self.search_bar)
 
-        today_btn = tk.Button(
-            toolbar, text="今天", command=self._go_today,
-            font=("Microsoft YaHei", 9), padx=8, cursor="hand2"
-        )
-        today_btn.pack(side=tk.LEFT, padx=(0, 4))
+        today_btn = QPushButton("今天")
+        today_btn.clicked.connect(self._go_today)
+        toolbar_layout.addWidget(today_btn)
 
-        stats_btn = tk.Button(
-            toolbar, text="统计", command=self._show_statistics,
-            font=("Microsoft YaHei", 9), padx=8, cursor="hand2"
-        )
-        stats_btn.pack(side=tk.LEFT, padx=(0, 4))
+        stats_btn = QPushButton("统计")
+        stats_btn.clicked.connect(self._show_statistics)
+        toolbar_layout.addWidget(stats_btn)
 
-        export_btn = tk.Button(
-            toolbar, text="导出 Markdown", command=self._export_markdown,
-            font=("Microsoft YaHei", 9), padx=8, cursor="hand2"
-        )
-        export_btn.pack(side=tk.LEFT)
+        export_btn = QPushButton("导出 Markdown")
+        export_btn.clicked.connect(self._export_markdown)
+        toolbar_layout.addWidget(export_btn)
 
-        # 底部统计栏
-        self._build_stats_bar()
+        toolbar_layout.addStretch()
+        layout.addWidget(toolbar)
 
-    # ---- 主体：左右分栏 ----
-
-    def _build_body(self) -> None:
-        paned = tk.PanedWindow(self, orient=tk.HORIZONTAL, sashwidth=4, bg="#dddddd")
-        paned.pack(fill=tk.BOTH, expand=True)
+        # 主体：左右分栏
+        splitter = QSplitter(Qt.Horizontal)
 
         # 左栏：日历
-        left = tk.Frame(paned, bg="#ffffff", width=220)
-        paned.add(left, minsize=200)
+        left = QWidget()
+        left_layout = QVBoxLayout(left)
+        left_layout.setContentsMargins(4, 4, 4, 4)
 
-        self.calendar = CalendarNav(
-            left, on_date_select=self._on_date_select
-        )
-        self.calendar.pack(fill=tk.BOTH, expand=True, padx=4, pady=4)
+        self.calendar = CalendarNav()
+        self.calendar.date_selected.connect(self._on_date_select)
+        left_layout.addWidget(self.calendar)
+        splitter.addWidget(left)
 
         # 右栏：编辑器
-        right = tk.Frame(paned, bg="#ffffff")
-        paned.add(right)
+        right = QWidget()
+        right_layout = QVBoxLayout(right)
+        right_layout.setContentsMargins(8, 8, 8, 8)
+        right_layout.setSpacing(4)
 
         # 标题
-        title_frame = tk.Frame(right, bg="#ffffff")
-        title_frame.pack(fill=tk.X, padx=12, pady=(12, 4))
-
-        tk.Label(
-            title_frame, text="标题：", font=("Microsoft YaHei", 10),
-            bg="#ffffff"
-        ).pack(side=tk.LEFT)
-
-        self.title_var = tk.StringVar()
-        self.title_entry = tk.Entry(
-            title_frame, textvariable=self.title_var,
-            font=("Microsoft YaHei", 11, "bold"), relief=tk.FLAT
-        )
-        self.title_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(4, 0))
-        self.title_entry.bind("<KeyRelease>", lambda e: self._on_content_change())
+        title_row = QHBoxLayout()
+        title_row.addWidget(QLabel("标题："))
+        self.title_entry = QLineEdit()
+        self.title_entry.textChanged.connect(self._on_content_change)
+        title_row.addWidget(self.title_entry)
+        right_layout.addLayout(title_row)
 
         # 情绪关联
-        self.mood_var = tk.StringVar()
-        mood_label = tk.Label(
-            right, textvariable=self.mood_var,
-            font=("Microsoft YaHei", 9), fg="#888888", bg="#ffffff",
-            anchor=tk.W, padx=12
-        )
-        mood_label.pack(fill=tk.X, pady=(0, 4))
+        self.mood_label = QLabel()
+        self.mood_label.setStyleSheet("color: #888; font-size: 11px; padding: 2px 0;")
+        right_layout.addWidget(self.mood_label)
 
         # 正文
-        text_frame = tk.Frame(right, bg="#ffffff", padx=12, pady=4)
-        text_frame.pack(fill=tk.BOTH, expand=True)
-
-        self.text = tk.Text(
-            text_frame, font=("Microsoft YaHei", 10),
-            wrap=tk.WORD, relief=tk.FLAT,
-            padx=8, pady=8, undo=True
-        )
-        self.text.pack(fill=tk.BOTH, expand=True)
-        self.text.bind("<KeyRelease>", lambda e: self._on_content_change())
+        self.text_edit = QTextEdit()
+        self.text_edit.textChanged.connect(self._on_content_change)
+        right_layout.addWidget(self.text_edit)
 
         # 底部操作栏
-        bottom = tk.Frame(right, bg="#fafafa", pady=6, padx=12)
-        bottom.pack(fill=tk.X)
+        bottom = QHBoxLayout()
 
-        self.word_count_var = tk.StringVar(value="字数：0")
-        tk.Label(
-            bottom, textvariable=self.word_count_var,
-            font=("Microsoft YaHei", 9), fg="#888888", bg="#fafafa"
-        ).pack(side=tk.LEFT)
+        self.word_count_label = QLabel("字数：0")
+        self.word_count_label.setStyleSheet("color: #888; font-size: 11px;")
+        bottom.addWidget(self.word_count_label)
 
-        save_btn = tk.Button(
-            bottom, text="保存 (Ctrl+S)", command=self._save_current,
-            font=("Microsoft YaHei", 9), padx=12, cursor="hand2"
-        )
-        save_btn.pack(side=tk.RIGHT, padx=(4, 0))
+        bottom.addStretch()
 
-        del_btn = tk.Button(
-            bottom, text="删除", command=self._delete_current,
-            font=("Microsoft YaHei", 9), padx=8, cursor="hand2", fg="#cc0000"
-        )
-        del_btn.pack(side=tk.RIGHT, padx=4)
+        del_btn = QPushButton("删除")
+        del_btn.setStyleSheet("QPushButton { color: #cc0000; }")
+        del_btn.clicked.connect(self._delete_current)
+        bottom.addWidget(del_btn)
 
-        # 绑定 Ctrl+S 保存
-        self.text.bind("<Control-s>", lambda e: self._save_current())
-        self.title_entry.bind("<Control-s>", lambda e: self._save_current())
+        save_btn = QPushButton("保存 (Ctrl+S)")
+        save_btn.clicked.connect(self._save_current)
+        bottom.addWidget(save_btn)
+
+        right_layout.addLayout(bottom)
+
+        splitter.addWidget(right)
+        splitter.setStretchFactor(0, 1)
+        splitter.setStretchFactor(1, 2)
+
+        layout.addWidget(splitter)
+
+        # 统计栏
+        self.stats_label = QLabel()
+        self.stats_label.setProperty("statsLabel", True)
+        layout.addWidget(self.stats_label)
 
     # ---- 事件 ----
 
     def _on_date_select(self, date_str: str) -> None:
-        """切换日期前自动保存当前日记。"""
         self._auto_save()
         self._current_date = date_str
         self._load_entry(date_str)
         self._update_mood_display(date_str)
 
     def _load_entry(self, date_str: str) -> None:
-        """加载指定日期的日记内容。"""
         entry = self.manager.get_entry(date_str)
+        self.title_entry.blockSignals(True)
+        self.text_edit.blockSignals(True)
         if entry:
-            self.title_var.set(entry.title)
-            self.text.delete("1.0", tk.END)
-            self.text.insert("1.0", entry.content)
-            self.word_count_var.set(f"字数：{entry.word_count}")
+            self.title_entry.setText(entry.title)
+            self.text_edit.setPlainText(entry.content)
+            self.word_count_label.setText(f"字数：{entry.word_count}")
         else:
-            self.title_var.set("")
-            self.text.delete("1.0", tk.END)
-            self.word_count_var.set("字数：0")
+            self.title_entry.clear()
+            self.text_edit.clear()
+            self.word_count_label.setText("字数：0")
+        self.title_entry.blockSignals(False)
+        self.text_edit.blockSignals(False)
 
     def _on_content_change(self) -> None:
-        """内容变化时更新字数统计。"""
-        content = self.text.get("1.0", tk.END).strip()
+        content = self.text_edit.toPlainText().strip()
         word_count = len(content.replace("\n", " ").split()) if content else 0
-        self.word_count_var.set(f"字数：{word_count}")
+        self.word_count_label.setText(f"字数：{word_count}")
 
     def _update_mood_display(self, date_str: str) -> None:
-        """从 StatusManager 获取当天心情数据并显示。"""
         record = self.status_manager.get_by_date(date_str)
         if record:
-            self.mood_var.set(
+            self.mood_label.setText(
                 f"心情：{self._mood_emoji(record.mood)} {record.mood}/5  "
                 f"精力：{record.energy}/5  "
                 f"专注：{record.focus}/5  "
                 f"睡眠：{record.sleep_hours}h"
             )
         else:
-            self.mood_var.set("")
+            self.mood_label.setText("")
 
     @staticmethod
     def _mood_emoji(score: int) -> str:
@@ -202,20 +186,18 @@ class JournalPage(BasePage):
     def _save_current(self) -> None:
         if not self._current_date:
             return
-        title = self.title_var.get().strip()
-        content = self.text.get("1.0", tk.END).strip()
+        title = self.title_entry.text().strip()
+        content = self.text_edit.toPlainText().strip()
         self.manager.save_entry(self._current_date, title, content)
-        self.set_status(f"日记已保存 ({self._current_date})")
+        self._emit_status(f"日记已保存 ({self._current_date})")
         self._on_content_change()
         self._update_calendar_marks()
 
     def _auto_save(self) -> None:
-        """失去焦点或切换日期时自动保存。"""
         if not self._current_date:
             return
-        title = self.title_var.get().strip()
-        content = self.text.get("1.0", tk.END).strip()
-        # 检查是否有现有条目
+        title = self.title_entry.text().strip()
+        content = self.text_edit.toPlainText().strip()
         existing = self.manager.get_entry(self._current_date)
         if existing:
             if existing.title != title or existing.content.strip() != content:
@@ -228,33 +210,36 @@ class JournalPage(BasePage):
     def _delete_current(self) -> None:
         if not self._current_date:
             return
-        if not messagebox.askyesno("确认删除", f"确定要删除 {self._current_date} 的日记吗？"):
+        result = QMessageBox.question(
+            self, "确认删除",
+            f"确定要删除 {self._current_date} 的日记吗？",
+            QMessageBox.Yes | QMessageBox.No, QMessageBox.No
+        )
+        if result != QMessageBox.Yes:
             return
         self.manager.delete_entry(self._current_date)
-        self.title_var.set("")
-        self.text.delete("1.0", tk.END)
-        self.word_count_var.set("字数：0")
-        self.mood_var.set("")
-        self.set_status(f"已删除 {self._current_date} 的日记")
+        self.title_entry.clear()
+        self.text_edit.clear()
+        self.word_count_label.setText("字数：0")
+        self.mood_label.setText("")
+        self._emit_status(f"已删除 {self._current_date} 的日记")
         self._update_calendar_marks()
 
     # ---- 搜索 ----
 
     def _on_search(self, keyword: str) -> None:
         if not keyword:
-            self.set_status("请输入搜索关键词")
+            self._emit_status("请输入搜索关键词")
             return
         results = self.manager.search(keyword)
         if results:
             entry = results[0]
-            self.set_status(f"找到 {len(results)} 条结果，跳转到第一条：{entry.date}")
+            self._emit_status(f"找到 {len(results)} 条结果，跳转到第一条：{entry.date}")
             self._auto_save()
             self.calendar.select_date(entry.date)
-            self.calendar.goto_date(
-                int(entry.date[:4]), int(entry.date[5:7])
-            )
+            self.calendar.goto_date(int(entry.date[:4]), int(entry.date[5:7]))
         else:
-            self.set_status("未找到匹配的日记")
+            self._emit_status("未找到匹配的日记")
 
     # ---- 统计 ----
 
@@ -266,31 +251,29 @@ class JournalPage(BasePage):
             f"平均字数：{stats['avg_words']}\n"
             f"连续天数：{stats['current_streak']} 天"
         )
-        messagebox.showinfo("日记统计", msg)
+        QMessageBox.information(self, "日记统计", msg)
 
     # ---- 导出 ----
 
     def _export_markdown(self) -> None:
         if not self._current_date:
-            messagebox.showinfo("提示", "请先选择一个日期")
+            QMessageBox.information(self, "提示", "请先选择一个日期")
             return
-
         entry = self.manager.get_entry(self._current_date)
         if not entry:
-            messagebox.showinfo("提示", f"{self._current_date} 没有日记内容")
+            QMessageBox.information(self, "提示", f"{self._current_date} 没有日记内容")
             return
 
         default_name = f"journal_{self._current_date}.md"
-        path = filedialog.asksaveasfilename(
-            defaultextension=".md", filetypes=[("Markdown", "*.md")],
-            initialfile=default_name
+        path, _ = QFileDialog.getSaveFileName(
+            self, "导出 Markdown", default_name, "Markdown 文件 (*.md)"
         )
         if path:
             try:
                 self.manager.export_single(self._current_date, path)
-                self.set_status(f"日记已导出至：{path}")
+                self._emit_status(f"日记已导出至：{path}")
             except Exception as e:
-                messagebox.showerror("导出失败", str(e))
+                QMessageBox.critical(self, "导出失败", str(e))
 
     # ---- 辅助 ----
 
@@ -306,7 +289,6 @@ class JournalPage(BasePage):
         self.calendar.set_marked_dates(dates)
 
     def refresh(self) -> None:
-        """刷新页面数据。"""
         self._update_calendar_marks()
         if self._current_date:
             self._load_entry(self._current_date)
@@ -315,17 +297,20 @@ class JournalPage(BasePage):
 
     def _update_stats(self) -> None:
         stats = self.manager.get_statistics()
-        self.stats_var.set(
+        self.stats_label.setText(
             f"共 {stats['total_entries']} 篇日记  "
             f"总字数 {stats['total_words']}  "
             f"连续 {stats['current_streak']} 天"
         )
 
     def highlight_item(self, item_id: str) -> None:
-        """高亮指定日记条目（由全局搜索导航调用）。"""
         entry = self.manager.get_by_id(item_id)
         if entry:
             self._auto_save()
             self.calendar.select_date(entry.date)
             dt = datetime.strptime(entry.date, "%Y-%m-%d")
             self.calendar.goto_date(dt.year, dt.month)
+
+    def _emit_status(self, text: str) -> None:
+        if self._set_status:
+            self._set_status(text)

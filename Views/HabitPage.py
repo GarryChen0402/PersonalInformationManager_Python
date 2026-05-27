@@ -1,8 +1,12 @@
-"""习惯追踪页面。"""
+"""习惯追踪页面 — PySide6 版本。"""
 
-import tkinter as tk
-from tkinter import ttk, messagebox
 from datetime import date
+
+from PySide6.QtWidgets import (
+    QWidget, QVBoxLayout, QHBoxLayout, QSplitter, QPushButton,
+    QComboBox, QLabel, QTableWidgetItem, QMessageBox
+)
+from PySide6.QtCore import Qt
 
 from Services.HabitManager import HabitManager
 from .BasePage import BasePage
@@ -13,185 +17,163 @@ from .ChartWidgets import CalendarHeatmap
 class HabitPage(BasePage):
     """习惯追踪页面，左右分栏布局。"""
 
-    def __init__(self, parent: tk.Widget, set_status):
+    def __init__(self, parent=None, set_status=None):
         super().__init__(parent, set_status)
         self.manager = HabitManager()
 
-        # 右栏先创建占位
         self._build_toolbar()
         self._build_body()
-        self._build_stats_bar()
 
     # ---- 工具栏 ----
 
     def _build_toolbar(self) -> None:
-        toolbar = tk.Frame(self, bg="#fafafa", pady=8)
-        toolbar.pack(fill=tk.X, padx=12, pady=(12, 0))
+        toolbar = QWidget()
+        toolbar_layout = QHBoxLayout(toolbar)
+        toolbar_layout.setContentsMargins(0, 4, 0, 4)
 
-        self.search_bar = SearchBar(toolbar, on_search=self._on_search)
-        self.search_bar.pack(side=tk.LEFT, padx=4)
+        self.search_bar = SearchBar(placeholder="搜索习惯...")
+        self.search_bar.search_requested.connect(self._on_search)
+        toolbar_layout.addWidget(self.search_bar)
 
-        # 类别筛选
-        tk.Label(toolbar, text="类别", font=("Microsoft YaHei", 9),
-                 bg=toolbar["bg"]).pack(side=tk.LEFT, padx=(8, 2))
-        self.category_var = tk.StringVar(value="全部")
-        self.category_combo = ttk.Combobox(
-            toolbar, textvariable=self.category_var, state="readonly",
-            values=["全部"] + HabitManager.VALID_CATEGORIES, width=8
-        )
-        self.category_combo.pack(side=tk.LEFT, padx=2)
-        self.category_combo.bind("<<ComboboxSelected>>", lambda e: self.refresh())
+        toolbar_layout.addWidget(QLabel("类别"))
+        self.category_filter = QComboBox()
+        self.category_filter.addItems(["全部"] + HabitManager.VALID_CATEGORIES)
+        self.category_filter.currentTextChanged.connect(lambda: self.refresh())
+        toolbar_layout.addWidget(self.category_filter)
 
-        # 状态筛选
-        tk.Label(toolbar, text="状态", font=("Microsoft YaHei", 9),
-                 bg=toolbar["bg"]).pack(side=tk.LEFT, padx=(8, 2))
-        self.status_var = tk.StringVar(value="活跃")
-        self.status_combo = ttk.Combobox(
-            toolbar, textvariable=self.status_var, state="readonly",
-            values=["活跃", "已归档"], width=6
-        )
-        self.status_combo.pack(side=tk.LEFT, padx=2)
-        self.status_combo.bind("<<ComboboxSelected>>", lambda e: self.refresh())
+        toolbar_layout.addWidget(QLabel("状态"))
+        self.status_filter = QComboBox()
+        self.status_filter.addItems(["活跃", "已归档"])
+        self.status_filter.currentTextChanged.connect(lambda: self.refresh())
+        toolbar_layout.addWidget(self.status_filter)
 
-        add_btn = tk.Button(
-            toolbar, text="+ 添加习惯", command=self._open_add_dialog,
-            font=("Microsoft YaHei", 9), padx=12, cursor="hand2"
-        )
-        add_btn.pack(side=tk.RIGHT, padx=4)
+        toolbar_layout.addStretch()
+
+        add_btn = QPushButton("+ 添加习惯")
+        add_btn.clicked.connect(self._open_add_dialog)
+        toolbar_layout.addWidget(add_btn)
+
+        self._layout.insertWidget(0, toolbar)
 
     # ---- 主体布局 ----
 
     def _build_body(self) -> None:
-        """左右分栏：习惯列表 + 详情面板。"""
-        paned = tk.PanedWindow(self, orient=tk.HORIZONTAL, sashwidth=4)
-        paned.pack(fill=tk.BOTH, expand=True, padx=12, pady=8)
+        body_widget = QWidget()
+        body_layout = QHBoxLayout(body_widget)
+        body_layout.setContentsMargins(0, 0, 0, 0)
+
+        splitter = QSplitter(Qt.Horizontal)
 
         # 左栏 — 习惯列表
-        left = tk.Frame(paned, bg=self["bg"])
-        paned.add(left, width=280, minsize=200)
+        left = QWidget()
+        left_layout = QVBoxLayout(left)
+        left_layout.setContentsMargins(0, 0, 0, 0)
 
-        self._build_table(left)
+        self.table.setColumnCount(3)
+        self.table.setHorizontalHeaderLabels(["☑", "习惯", "连续"])
+        self.table.horizontalHeader().setSectionResizeMode(1, QHeaderView.Stretch)
+        self.table.doubleClicked.connect(self._on_table_double_click)
+        self.table.itemSelectionChanged.connect(self._on_habit_select)
+        # 移除旧表格，用新的包裹
+        from PySide6.QtWidgets import QHeaderView
+        left_layout.addWidget(self.table)
+        splitter.addWidget(left)
 
         # 右栏 — 详情面板
-        self.right_frame = tk.Frame(paned, bg=self["bg"])
-        paned.add(self.right_frame, width=400, minsize=300)
-        self._build_detail_panel()
+        right = QWidget()
+        right_layout = QVBoxLayout(right)
+        right_layout.setContentsMargins(12, 12, 12, 12)
+        right_layout.setSpacing(8)
 
-    # ---- 习惯列表 ----
+        self._build_detail_panel(right_layout)
+        splitter.addWidget(right)
 
-    def _build_table(self, parent: tk.Frame) -> None:
-        columns = ("check", "name", "streak")
-        self.tree = ttk.Treeview(parent, columns=columns, show="headings",
-                                 selectmode="browse", height=12)
+        splitter.setStretchFactor(0, 1)
+        splitter.setStretchFactor(1, 2)
 
-        self.tree.heading("check", text="☑")
-        self.tree.heading("name", text="习惯")
-        self.tree.heading("streak", text="连续")
+        body_layout.addWidget(splitter)
+        # 替换原有表格位置
+        self._layout.removeWidget(self.table)
+        self._layout.removeWidget(self.stats_frame)
+        self._layout.insertWidget(1, body_widget)
+        self._layout.addWidget(self.stats_frame)
 
-        self.tree.column("check", width=30, anchor=tk.CENTER)
-        self.tree.column("name", width=160)
-        self.tree.column("streak", width=60, anchor=tk.CENTER)
-
-        scrollbar = ttk.Scrollbar(parent, orient=tk.VERTICAL, command=self.tree.yview)
-        self.tree.configure(yscrollcommand=scrollbar.set)
-
-        self.tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-
-        # 双击打卡/撤销
-        self.tree.bind("<Double-1>", self._on_tree_double_click)
-        # 空格键打卡/撤销
-        self.tree.bind("<space>", self._on_tree_double_click)
-        # 选中查看详情
-        self.tree.bind("<<TreeviewSelect>>", self._on_habit_select)
-
-    # ---- 详情面板 ----
-
-    def _build_detail_panel(self) -> None:
-        """右栏详情面板。"""
-        # 标题
-        self.detail_title = tk.Label(
-            self.right_frame, text="选择一个习惯",
-            font=("Microsoft YaHei", 12, "bold"),
-            bg=self["bg"], anchor=tk.W
-        )
-        self.detail_title.pack(fill=tk.X, padx=16, pady=(16, 4))
+    def _build_detail_panel(self, layout: QVBoxLayout) -> None:
+        self.detail_title = QLabel("选择一个习惯")
+        self.detail_title.setStyleSheet("font-size: 14px; font-weight: bold;")
+        layout.addWidget(self.detail_title)
 
         # 统计信息
-        self.stats_frame = tk.Frame(self.right_frame, bg=self["bg"])
-        self.stats_frame.pack(fill=tk.X, padx=16, pady=8)
-
-        self.stats_labels: dict[str, tk.Label] = {}
-        for key, text in [("current", "当前连续"), ("longest", "最长连续"),
-                           ("total", "总打卡"), ("rate", "完成率")]:
-            row = tk.Frame(self.stats_frame, bg=self["bg"])
-            row.pack(fill=tk.X, pady=2)
-            tk.Label(row, text=f"{text}：", font=("Microsoft YaHei", 10),
-                     bg=self["bg"], fg="#666").pack(side=tk.LEFT)
-            val_label = tk.Label(row, text="-", font=("Microsoft YaHei", 10, "bold"),
-                                 bg=self["bg"])
-            val_label.pack(side=tk.LEFT)
+        stats_grid = QHBoxLayout()
+        self.stats_labels: dict[str, QLabel] = {}
+        for key in ["current", "longest", "total", "rate"]:
+            pair_layout = QVBoxLayout()
+            name_label = QLabel(
+                {"current": "当前连续", "longest": "最长连续",
+                 "total": "总打卡", "rate": "完成率"}[key]
+            )
+            name_label.setStyleSheet("color: #666; font-size: 10px;")
+            pair_layout.addWidget(name_label)
+            val_label = QLabel("-")
+            val_label.setStyleSheet("font-size: 12px; font-weight: bold;")
+            pair_layout.addWidget(val_label)
             self.stats_labels[key] = val_label
+            stats_grid.addLayout(pair_layout)
+        stats_grid.addStretch()
+        layout.addLayout(stats_grid)
 
         # 热力图
-        self.heatmap_frame = tk.Frame(self.right_frame, bg=self["bg"])
-        self.heatmap_frame.pack(fill=tk.X, padx=16, pady=8)
-        self.heatmap = CalendarHeatmap(self.heatmap_frame, height=130)
-        self.heatmap.pack(fill=tk.X)
+        self.heatmap = CalendarHeatmap()
+        self.heatmap.setMinimumHeight(130)
+        layout.addWidget(self.heatmap)
 
         # 操作按钮
-        btn_frame = tk.Frame(self.right_frame, bg=self["bg"])
-        btn_frame.pack(fill=tk.X, padx=16, pady=(8, 16))
+        btn_row = QHBoxLayout()
+        self.checkin_btn = QPushButton("✓ 打卡")
+        self.checkin_btn.clicked.connect(self._do_check_in)
+        self.checkin_btn.setEnabled(False)
+        btn_row.addWidget(self.checkin_btn)
 
-        self.checkin_btn = tk.Button(
-            btn_frame, text="✓ 打卡", command=self._do_check_in,
-            font=("Microsoft YaHei", 10), padx=16, cursor="hand2",
-            state=tk.DISABLED
-        )
-        self.checkin_btn.pack(side=tk.LEFT, padx=4)
+        self.undo_btn = QPushButton("↩ 撤销")
+        self.undo_btn.clicked.connect(self._do_undo)
+        self.undo_btn.setEnabled(False)
+        btn_row.addWidget(self.undo_btn)
 
-        self.undo_btn = tk.Button(
-            btn_frame, text="↩ 撤销", command=self._do_undo,
-            font=("Microsoft YaHei", 10), padx=12, cursor="hand2",
-            state=tk.DISABLED
-        )
-        self.undo_btn.pack(side=tk.LEFT, padx=4)
+        btn_row.addStretch()
 
-        edit_btn = tk.Button(
-            btn_frame, text="编辑", command=self._open_edit_dialog,
-            font=("Microsoft YaHei", 9), padx=12, cursor="hand2",
-            state=tk.DISABLED
-        )
-        edit_btn.pack(side=tk.RIGHT, padx=4)
-        self.edit_btn = edit_btn
+        self.edit_btn = QPushButton("编辑")
+        self.edit_btn.clicked.connect(self._open_edit_dialog)
+        self.edit_btn.setEnabled(False)
+        btn_row.addWidget(self.edit_btn)
 
-        archive_btn = tk.Button(
-            btn_frame, text="归档", command=self._do_archive,
-            font=("Microsoft YaHei", 9), padx=12, cursor="hand2",
-            state=tk.DISABLED
-        )
-        archive_btn.pack(side=tk.RIGHT, padx=4)
-        self.archive_btn = archive_btn
+        self.archive_btn = QPushButton("归档")
+        self.archive_btn.clicked.connect(self._do_archive)
+        self.archive_btn.setEnabled(False)
+        btn_row.addWidget(self.archive_btn)
+
+        layout.addLayout(btn_row)
+        layout.addStretch()
 
     # ---- 对话框 ----
 
     def _open_add_dialog(self) -> None:
         fields = [
-            {"name": "name", "label": "习惯名称", "type": "text", "required": True},
-            {"name": "frequency", "label": "频率", "type": "combobox",
-             "options": [("每天", "daily"), ("每周", "weekly"), ("自定义天数", "custom")]},
-            {"name": "custom_days", "label": "自定义天数（仅自定义频率时使用）", "type": "spinbox",
+            {"key": "name", "label": "习惯名称", "type": "text", "required": True},
+            {"key": "frequency", "label": "频率", "type": "combo",
+             "options": ["daily", "weekly", "custom"]},
+            {"key": "custom_days", "label": "自定义天数", "type": "spinbox",
              "from_": 1, "to": 30},
-            {"name": "target_count", "label": "每日目标次数", "type": "spinbox",
+            {"key": "target_count", "label": "每日目标次数", "type": "spinbox",
              "from_": 1, "to": 100},
-            {"name": "category", "label": "类别", "type": "combobox",
+            {"key": "category", "label": "类别", "type": "combo",
              "options": HabitManager.VALID_CATEGORIES},
-            {"name": "description", "label": "描述", "type": "text"},
-            {"name": "color", "label": "热力图颜色", "type": "combobox",
-             "options": [("蓝色", "#4a90d9"), ("绿色", "#27ae60"), ("橙色", "#e67e22"),
-                         ("紫色", "#8e44ad"), ("红色", "#e74c3c")]},
+            {"key": "description", "label": "描述", "type": "text"},
+            {"key": "color", "label": "热力图颜色", "type": "combo",
+             "options": ["#4a90d9", "#27ae60", "#e67e22", "#8e44ad", "#e74c3c"]},
         ]
-        FormDialog(self, "添加习惯", fields, on_save=self._do_add)
+        data = FormDialog.get_form_data(self, "添加习惯", fields)
+        if data:
+            self._do_add(data)
 
     def _do_add(self, data: dict) -> None:
         try:
@@ -207,32 +189,32 @@ class HabitPage(BasePage):
             )
             self.refresh()
             self._select_habit(habit.id)
-            self.set_status(f"习惯「{habit.name}」已创建")
+            self.emit_status(f"习惯「{habit.name}」已创建")
         except Exception as e:
-            messagebox.showerror("添加失败", str(e))
+            QMessageBox.critical(self, "添加失败", str(e))
 
     def _open_edit_dialog(self) -> None:
         habit = self._get_selected_habit()
         if not habit:
             return
         fields = [
-            {"name": "name", "label": "习惯名称", "type": "text", "required": True},
-            {"name": "frequency", "label": "频率", "type": "combobox",
-             "options": [("每天", "daily"), ("每周", "weekly"), ("自定义天数", "custom")]},
-            {"name": "target_count", "label": "每日目标次数", "type": "spinbox",
+            {"key": "name", "label": "习惯名称", "type": "text", "required": True},
+            {"key": "frequency", "label": "频率", "type": "combo",
+             "options": ["daily", "weekly", "custom"]},
+            {"key": "target_count", "label": "每日目标次数", "type": "spinbox",
              "from_": 1, "to": 100},
-            {"name": "category", "label": "类别", "type": "combobox",
+            {"key": "category", "label": "类别", "type": "combo",
              "options": HabitManager.VALID_CATEGORIES},
-            {"name": "description", "label": "描述", "type": "text"},
+            {"key": "description", "label": "描述", "type": "text"},
         ]
         initial = {
             "name": habit.name, "frequency": habit.frequency,
             "target_count": habit.target_count,
             "category": habit.category, "description": habit.description,
         }
-        FormDialog(self, "编辑习惯", fields,
-                   on_save=lambda d: self._do_edit(habit.id, d),
-                   initial_data=initial)
+        data = FormDialog.get_form_data(self, "编辑习惯", fields, initial)
+        if data:
+            self._do_edit(habit.id, data)
 
     def _do_edit(self, habit_id: str, data: dict) -> None:
         try:
@@ -245,14 +227,13 @@ class HabitPage(BasePage):
             )
             self.refresh()
             self._select_habit(habit_id)
-            self.set_status(f"习惯「{data['name']}」已更新")
+            self.emit_status(f"习惯「{data['name']}」已更新")
         except Exception as e:
-            messagebox.showerror("编辑失败", str(e))
+            QMessageBox.critical(self, "编辑失败", str(e))
 
     # ---- 打卡操作 ----
 
-    def _on_tree_double_click(self, event=None) -> None:
-        """双击切换打卡状态。"""
+    def _on_table_double_click(self) -> None:
         habit = self._get_selected_habit()
         if not habit:
             return
@@ -270,9 +251,9 @@ class HabitPage(BasePage):
             self.manager.check_in(habit.id)
             self.refresh()
             self._select_habit(habit.id)
-            self.set_status(f"「{habit.name}」打卡成功")
+            self.emit_status(f"「{habit.name}」打卡成功")
         except Exception as e:
-            messagebox.showerror("打卡失败", str(e))
+            QMessageBox.critical(self, "打卡失败", str(e))
 
     def _do_undo(self) -> None:
         habit = self._get_selected_habit()
@@ -282,7 +263,7 @@ class HabitPage(BasePage):
         self.manager.undo_check_in(habit.id, today)
         self.refresh()
         self._select_habit(habit.id)
-        self.set_status(f"「{habit.name}」打卡已撤销")
+        self.emit_status(f"「{habit.name}」打卡已撤销")
 
     def _do_archive(self) -> None:
         habit = self._get_selected_habit()
@@ -296,34 +277,32 @@ class HabitPage(BasePage):
         else:
             self.manager.archive_habit(habit.id)
         self.refresh()
-        self.set_status(f"习惯「{habit.name}」已{action}")
+        self.emit_status(f"习惯「{habit.name}」已{action}")
 
     # ---- 详情面板更新 ----
 
-    def _on_habit_select(self, event=None) -> None:
-        """选中习惯时更新详情面板。"""
+    def _on_habit_select(self) -> None:
         habit = self._get_selected_habit()
         if not habit:
-            self.detail_title.configure(text="选择一个习惯")
+            self.detail_title.setText("选择一个习惯")
             for key in self.stats_labels:
-                self.stats_labels[key].configure(text="-")
-            self.checkin_btn.configure(state=tk.DISABLED)
-            self.undo_btn.configure(state=tk.DISABLED)
-            self.edit_btn.configure(state=tk.DISABLED)
-            self.archive_btn.configure(state=tk.DISABLED)
+                self.stats_labels[key].setText("-")
+            self.checkin_btn.setEnabled(False)
+            self.undo_btn.setEnabled(False)
+            self.edit_btn.setEnabled(False)
+            self.archive_btn.setEnabled(False)
             return
 
-        self.detail_title.configure(text=habit.name)
+        self.detail_title.setText(habit.name)
         streak = self.manager.get_streak(habit.id)
         total = streak.get("total_checkins", 0)
         rate = streak.get("completion_rate", 0)
 
-        self.stats_labels["current"].configure(text=f"{streak.get('current', 0)} 天")
-        self.stats_labels["longest"].configure(text=f"{streak.get('longest', 0)} 天")
-        self.stats_labels["total"].configure(text=f"{total} 次")
-        self.stats_labels["rate"].configure(text=f"{rate:.0%}")
+        self.stats_labels["current"].setText(f"{streak.get('current', 0)} 天")
+        self.stats_labels["longest"].setText(f"{streak.get('longest', 0)} 天")
+        self.stats_labels["total"].setText(f"{total} 次")
+        self.stats_labels["rate"].setText(f"{rate:.0%}")
 
-        # 加载热力图数据
         heatmap_data = self.manager.get_heatmap_data(habit.id)
         self.heatmap.set_data(heatmap_data)
         if habit.color and habit.color != "#4a90d9":
@@ -332,46 +311,42 @@ class HabitPage(BasePage):
         today = date.today().isoformat()
         checked = self.manager.is_checked_in(habit.id, today)
 
-        self.checkin_btn.configure(state=tk.NORMAL if not checked else tk.DISABLED)
-        self.undo_btn.configure(state=tk.NORMAL if checked else tk.DISABLED)
-        self.edit_btn.configure(state=tk.NORMAL)
-        self.archive_btn.configure(
-            state=tk.NORMAL,
-            text="恢复" if habit.archived else "归档"
-        )
+        self.checkin_btn.setEnabled(not checked)
+        self.undo_btn.setEnabled(checked)
+        self.edit_btn.setEnabled(True)
+        self.archive_btn.setEnabled(True)
+        self.archive_btn.setText("恢复" if habit.archived else "归档")
 
     # ---- 数据刷新 ----
 
     def refresh(self) -> None:
-        include_archived = self.status_var.get() == "已归档"
-        category = self.category_var.get()
+        include_archived = self.status_filter.currentText() == "已归档"
+        category = self.category_filter.currentText()
 
         habits = self.manager.get_all(include_archived=include_archived)
         if category != "全部":
             habits = [h for h in habits if h.category == category]
 
-        self._populate_tree(habits)
+        self._populate_table(habits)
 
-        # 更新统计栏
         active = self.manager.get_active()
         today_stats = self.manager.get_today_stats()
-        self.stats_var.set(
+        self._set_stats_text(
             f"活跃 {today_stats['total_active']} | "
             f"今日打卡 {today_stats['checked_today']}/{today_stats['total_active']}"
         )
 
-        # 刷新详情
         self._on_habit_select()
 
-    def _populate_tree(self, habits: list) -> None:
-        self._clear_tree()
+    def _populate_table(self, habits: list) -> None:
+        self._clear_table()
         today = date.today().isoformat()
         for h in habits:
             checked = "☑" if self.manager.is_checked_in(h.id, today) else "☐"
             streak = self.manager.get_streak(h.id)
-            self.tree.insert("", tk.END, iid=h.id, values=(
+            self._add_row([
                 checked, h.name, f"{streak.get('current', 0)}天"
-            ))
+            ], item_id=h.id)
 
     # ---- 搜索 ----
 
@@ -380,24 +355,27 @@ class HabitPage(BasePage):
             self.refresh()
             return
         results = self.manager.search(keyword)
-        self._populate_tree(results)
+        self._populate_table(
+            [h for h in self.manager.get_all(include_archived=True)
+             if h.id in {r.id for r in results}]
+        )
 
     # ---- 辅助方法 ----
 
     def _get_selected_habit(self):
-        """获取当前选中的习惯对象。"""
-        selection = self.tree.selection()
-        if not selection:
+        habit_id = self._get_selected_id()
+        if not habit_id:
             return None
-        return self.manager.get_by_id(selection[0])
+        return self.manager.get_by_id(habit_id)
 
     def _select_habit(self, habit_id: str) -> None:
-        """选中并滚动到指定习惯。"""
-        if self.tree.exists(habit_id):
-            self.tree.selection_set(habit_id)
-            self.tree.focus(habit_id)
-            self.tree.see(habit_id)
-            self._on_habit_select()
+        for row in range(self.table.rowCount()):
+            item = self.table.item(row, 0)
+            if item and item.data(Qt.UserRole) == habit_id:
+                self.table.selectRow(row)
+                self.table.scrollToItem(item)
+                self._on_habit_select()
+                return
 
     def highlight_item(self, item_id: str) -> None:
         self._select_habit(item_id)
