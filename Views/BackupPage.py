@@ -1,7 +1,10 @@
-"""数据备份与恢复页面。"""
+"""数据备份与恢复页面 — PySide6 版本。"""
 
-import tkinter as tk
-from tkinter import ttk, messagebox
+from PySide6.QtWidgets import (
+    QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QCheckBox,
+    QTableWidgetItem, QHeaderView, QMessageBox, QDialog, QDialogButtonBox
+)
+from PySide6.QtCore import Qt
 
 from Services.BackupManager import BackupManager
 from .Widgets import ConfirmDialog
@@ -16,73 +19,65 @@ def _format_size(size_bytes: int) -> str:
         return f"{size_bytes / (1024 * 1024):.1f} MB"
 
 
-class BackupPage(tk.Frame):
+class BackupPage(QWidget):
     """数据管理页面，备份列表 + 操作按钮。"""
 
-    def __init__(self, parent: tk.Widget, set_status):
-        super().__init__(parent, bg="#ffffff")
+    def __init__(self, parent=None, set_status=None):
+        super().__init__(parent)
         self.manager = BackupManager()
-        self.set_status = set_status
+        self._set_status = set_status
 
-        self._build_header()
-        self._build_table()
-        self._build_actions()
+        self._build()
 
-    # ---- 头部 ----
+    def _build(self) -> None:
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(12, 12, 12, 12)
+        layout.setSpacing(8)
 
-    def _build_header(self) -> None:
-        header = tk.Frame(self, bg="#fafafa", pady=10)
-        header.pack(fill=tk.X, padx=12, pady=(12, 0))
+        # 头部
+        header = QHBoxLayout()
+        title = QLabel("数据管理")
+        title.setStyleSheet("font-size: 16px; font-weight: bold;")
+        header.addWidget(title)
+        header.addStretch()
 
-        tk.Label(header, text="数据管理", bg="#fafafa",
-                 font=("Microsoft YaHei", 16, "bold")).pack(side=tk.LEFT)
+        create_btn = QPushButton("+ 创建备份")
+        create_btn.clicked.connect(self._create_backup)
+        header.addWidget(create_btn)
+        layout.addLayout(header)
 
-        create_btn = tk.Button(
-            header, text="+ 创建备份", command=self._create_backup,
-            font=("Microsoft YaHei", 9), padx=12, cursor="hand2"
-        )
-        create_btn.pack(side=tk.RIGHT)
+        # 表格
+        self.table = self._build_table()
+        layout.addWidget(self.table)
 
-    # ---- 表格 ----
-
-    def _build_table(self) -> None:
-        columns = ("name", "created_at", "size")
-        self.tree = ttk.Treeview(self, columns=columns, show="headings",
-                                 selectmode="browse")
-
-        self.tree.heading("name", text="文件名")
-        self.tree.heading("created_at", text="创建时间")
-        self.tree.heading("size", text="大小")
-
-        self.tree.column("name", width=280)
-        self.tree.column("created_at", width=150, anchor=tk.CENTER)
-        self.tree.column("size", width=100, anchor=tk.CENTER)
-
-        scrollbar = ttk.Scrollbar(self, orient=tk.VERTICAL, command=self.tree.yview)
-        self.tree.configure(yscrollcommand=scrollbar.set)
-
-        self.tree.pack(fill=tk.BOTH, expand=True, padx=12, pady=8)
-        scrollbar.pack(side=tk.RIGHT, fill=tk.Y, padx=(0, 12), pady=8)
-
-    # ---- 操作按钮 ----
-
-    def _build_actions(self) -> None:
-        actions = tk.Frame(self, bg="#f5f5f5", pady=8)
-        actions.pack(fill=tk.X, side=tk.BOTTOM)
-
+        # 操作按钮
+        actions = QHBoxLayout()
         btn_configs = [
             ("查看详情", self._show_detail),
             ("恢复全部", self._restore_all),
             ("恢复选择...", self._restore_selected),
             ("删除备份", self._delete_backup),
         ]
+        for text, handler in btn_configs:
+            btn = QPushButton(text)
+            btn.clicked.connect(handler)
+            actions.addWidget(btn)
+        actions.addStretch()
+        layout.addLayout(actions)
 
-        for text, cmd in btn_configs:
-            btn = tk.Button(
-                actions, text=text, command=cmd,
-                font=("Microsoft YaHei", 9), padx=12, cursor="hand2"
-            )
-            btn.pack(side=tk.LEFT, padx=4)
+    def _build_table(self) -> QWidget:
+        from PySide6.QtWidgets import QTableWidget
+        table = QTableWidget()
+        table.setColumnCount(3)
+        table.setHorizontalHeaderLabels(["文件名", "创建时间", "大小"])
+        table.setSelectionBehavior(QTableWidget.SelectRows)
+        table.setSelectionMode(QTableWidget.SingleSelection)
+        table.setEditTriggers(QTableWidget.NoEditTriggers)
+        table.setAlternatingRowColors(True)
+        table.verticalHeader().setVisible(False)
+        table.horizontalHeader().setSectionResizeMode(0, QHeaderView.Stretch)
+        table.horizontalHeader().setStretchLastSection(True)
+        return table
 
     # ---- 操作 ----
 
@@ -90,9 +85,9 @@ class BackupPage(tk.Frame):
         try:
             path = self.manager.create_backup()
             self.refresh()
-            self.set_status(f"备份已创建: {path}")
+            self._emit_status(f"备份已创建: {path}")
         except Exception as e:
-            messagebox.showerror("备份失败", str(e))
+            QMessageBox.critical(self, "备份失败", str(e))
 
     def _show_detail(self) -> None:
         backup = self._get_selected()
@@ -100,7 +95,7 @@ class BackupPage(tk.Frame):
             return
         info = self.manager.get_backup_info(backup["path"])
         if not info:
-            messagebox.showerror("错误", "无法读取备份文件")
+            QMessageBox.critical(self, "错误", "无法读取备份文件")
             return
 
         lines = [f"备份文件: {backup['name']}\n"]
@@ -109,7 +104,7 @@ class BackupPage(tk.Frame):
                 lines.append(f"  {module}: {detail} 条记录")
             else:
                 lines.append(f"  {module}: {detail}")
-        messagebox.showinfo("备份详情", "\n".join(lines))
+        QMessageBox.information(self, "备份详情", "\n".join(lines))
 
     def _restore_all(self) -> None:
         backup = self._get_selected()
@@ -120,16 +115,15 @@ class BackupPage(tk.Frame):
             f"确定要从「{backup['name']}」恢复全部数据吗？\n此操作将覆盖当前数据。"
         ):
             return
-
         try:
             result = self.manager.restore_backup(backup["path"])
             msg = f"成功恢复: {', '.join(result['success'])}"
             if result["failed"]:
                 msg += f"\n失败: {', '.join(result['failed'])}"
-            messagebox.showinfo("恢复完成", msg + "\n\n建议重启程序以刷新所有页面。")
-            self.set_status("数据已恢复，建议重启程序")
+            QMessageBox.information(self, "恢复完成", msg + "\n\n建议重启程序以刷新所有页面。")
+            self._emit_status("数据已恢复，建议重启程序")
         except Exception as e:
-            messagebox.showerror("恢复失败", str(e))
+            QMessageBox.critical(self, "恢复失败", str(e))
 
     def _restore_selected(self) -> None:
         backup = self._get_selected()
@@ -138,61 +132,22 @@ class BackupPage(tk.Frame):
 
         info = self.manager.get_backup_info(backup["path"])
         if not info:
-            messagebox.showerror("错误", "无法读取备份文件")
+            QMessageBox.critical(self, "错误", "无法读取备份文件")
             return
 
-        # 弹出模块选择对话框
-        dialog = tk.Toplevel(self)
-        dialog.title("选择恢复模块")
-        dialog.resizable(False, False)
-        dialog.transient(self)
-        dialog.grab_set()
-
-        tk.Label(dialog, text="请选择要恢复的模块：",
-                 font=("Microsoft YaHei", 10), pady=8).pack()
-
-        vars_dict = {}
-        module_names = {"profile": "个人档案", "skills": "技能", "status": "状态",
-                        "knowledge": "知识", "passwords": "密码"}
-
-        for mod_key, mod_label in module_names.items():
-            if mod_key in info:
-                var = tk.BooleanVar(value=True)
-                vars_dict[mod_key] = var
-                detail = info[mod_key]
-                detail_text = f"{detail} 条记录" if isinstance(detail, int) else detail
-                cb = tk.Checkbutton(
-                    dialog, text=f"{mod_label} ({detail_text})",
-                    variable=var, font=("Microsoft YaHei", 9)
-                )
-                cb.pack(anchor=tk.W, padx=20, pady=2)
-
-        btn_frame = tk.Frame(dialog, pady=10)
-        btn_frame.pack()
-
-        def do_restore():
-            selected = [k for k, v in vars_dict.items() if v.get()]
-            if not selected:
-                messagebox.showwarning("提示", "请至少选择一个模块")
-                return
+        dialog = RestoreSelectDialog(info, self)
+        if dialog.exec() == QDialog.Accepted and dialog.selected_modules:
             try:
-                result = self.manager.restore_backup(backup["path"], modules=selected)
+                result = self.manager.restore_backup(
+                    backup["path"], modules=dialog.selected_modules
+                )
                 msg = f"成功恢复: {', '.join(result['success'])}"
                 if result["failed"]:
                     msg += f"\n失败: {', '.join(result['failed'])}"
-                messagebox.showinfo("恢复完成", msg)
-                self.set_status("部分数据已恢复")
+                QMessageBox.information(self, "恢复完成", msg)
+                self._emit_status("部分数据已恢复")
             except Exception as e:
-                messagebox.showerror("恢复失败", str(e))
-            dialog.destroy()
-
-        cancel_btn = tk.Button(btn_frame, text="取消", command=dialog.destroy,
-                               font=("Microsoft YaHei", 9), padx=12, cursor="hand2")
-        cancel_btn.pack(side=tk.LEFT, padx=8)
-
-        restore_btn = tk.Button(btn_frame, text="恢复", command=do_restore,
-                                font=("Microsoft YaHei", 9), padx=12, cursor="hand2")
-        restore_btn.pack(side=tk.LEFT)
+                QMessageBox.critical(self, "恢复失败", str(e))
 
     def _delete_backup(self) -> None:
         backup = self._get_selected()
@@ -202,25 +157,78 @@ class BackupPage(tk.Frame):
                               f"确定要删除备份「{backup['name']}」吗？"):
             self.manager.delete_backup(backup["path"])
             self.refresh()
-            self.set_status(f"备份「{backup['name']}」已删除")
+            self._emit_status(f"备份「{backup['name']}」已删除")
 
     # ---- 数据加载 ----
 
     def refresh(self) -> None:
         backups = self.manager.list_backups()
-        for item in self.tree.get_children():
-            self.tree.delete(item)
+        self.table.setRowCount(0)
         for b in backups:
-            self.tree.insert("", tk.END, values=(
-                b["name"], b["created_at"], _format_size(b["size"])
-            ), iid=b["path"])
+            row = self.table.rowCount()
+            self.table.insertRow(row)
+            self.table.setItem(row, 0, QTableWidgetItem(b["name"]))
+            self.table.setItem(row, 1, QTableWidgetItem(b["created_at"]))
+            self.table.setItem(row, 2, QTableWidgetItem(_format_size(b["size"])))
+            # Store path as UserRole on first column
+            self.table.item(row, 0).setData(Qt.UserRole, b["path"])
 
     def _get_selected(self) -> dict | None:
-        selection = self.tree.selection()
-        if not selection:
-            messagebox.showinfo("提示", "请先选中一个备份文件")
+        row = self.table.currentRow()
+        if row < 0:
+            QMessageBox.information(self, "提示", "请先选中一个备份文件")
             return None
+        path = self.table.item(row, 0).data(Qt.UserRole)
         for b in self.manager.list_backups():
-            if b["path"] == selection[0]:
+            if b["path"] == path:
                 return b
         return None
+
+    def _emit_status(self, text: str) -> None:
+        if self._set_status:
+            self._set_status(text)
+
+
+class RestoreSelectDialog(QDialog):
+    """按模块选择恢复对话框。"""
+
+    MODULE_NAMES = {
+        "profile": "个人档案", "skills": "技能", "status": "状态",
+        "knowledge": "知识", "passwords": "密码",
+    }
+
+    def __init__(self, info: dict, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("选择恢复模块")
+        self.setModal(True)
+        self.selected_modules: list[str] = []
+        self._build(info)
+
+    def _build(self, info: dict) -> None:
+        layout = QVBoxLayout(self)
+        layout.setSpacing(10)
+
+        layout.addWidget(QLabel("请选择要恢复的模块："))
+
+        self._checks: dict[str, QCheckBox] = {}
+        for mod_key, mod_label in self.MODULE_NAMES.items():
+            if mod_key in info:
+                detail = info[mod_key]
+                detail_text = f"{detail} 条记录" if isinstance(detail, int) else detail
+                cb = QCheckBox(f"{mod_label} ({detail_text})")
+                cb.setChecked(True)
+                self._checks[mod_key] = cb
+                layout.addWidget(cb)
+
+        buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        buttons.button(QDialogButtonBox.Ok).setText("恢复")
+        buttons.accepted.connect(self._do_restore)
+        buttons.rejected.connect(self.reject)
+        layout.addWidget(buttons)
+
+    def _do_restore(self) -> None:
+        self.selected_modules = [k for k, cb in self._checks.items() if cb.isChecked()]
+        if not self.selected_modules:
+            QMessageBox.warning(self, "提示", "请至少选择一个模块")
+            return
+        self.accept()
