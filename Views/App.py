@@ -1,22 +1,17 @@
-"""应用程序主窗口。"""
+"""应用程序主窗口 — PySide6 版本。"""
 
 import datetime
-import tkinter as tk
-from tkinter import font as tkfont
-from tkinter import messagebox
+import sys
+
+from PySide6.QtWidgets import (
+    QMainWindow, QStackedWidget, QStatusBar, QSplitter, QLabel,
+    QMessageBox, QApplication, QDialog, QVBoxLayout, QLineEdit,
+    QPushButton, QHBoxLayout, QWidget
+)
+from PySide6.QtCore import Qt, QTimer
+from PySide6.QtGui import QAction, QKeySequence, QFont
 
 from .NavFrame import NavFrame
-from .DashboardPage import DashboardPage
-from .ProfilePage import ProfilePage
-from .SkillPage import SkillPage
-from .StatusPage import StatusPage
-from .KnowledgePage import KnowledgePage
-from .PasswordPage import PasswordPage
-from .BackupPage import BackupPage
-from .TodoPage import TodoPage
-from .HabitPage import HabitPage
-from .JournalPage import JournalPage
-from .GlobalSearchBar import SearchResult
 from Services.ConfigManager import ConfigManager
 from Services.CryptoService import CryptoService
 from Services.PasswordManager import PasswordManager
@@ -28,63 +23,227 @@ from Services.HabitManager import HabitManager
 from Services.JournalManager import JournalManager
 
 
-# ---- 配色主题 ----
+# ---- 配色主题 (Qt Stylesheet) ----
 
-LIGHT_THEME = {
-    "bg": "#ffffff",
-    "fg": "#333333",
-    "toolbar_bg": "#fafafa",
-    "stats_bg": "#f5f5f5",
-    "nav_bg": "#f0f0f0",
-    "nav_active": "#4a90d9",
-    "button_bg": "#e0e0e0",
-    "card_bg": "#f8f9fa",
-    "border": "#dddddd",
-    "status_bg": "#f0f0f0",
+THEME_LIGHT = """
+QMainWindow { background-color: #f5f5f5; }
+QTableWidget {
+    background-color: #ffffff;
+    alternate-background-color: #f9f9f9;
+    gridline-color: #e0e0e0;
+    selection-background-color: #0078d4;
+    selection-color: #ffffff;
+    border: 1px solid #dddddd;
 }
+QTableWidget::item { padding: 4px; }
+QListWidget {
+    background-color: #f0f0f0;
+    border: none;
+    outline: none;
+}
+QListWidget::item {
+    padding: 8px 12px;
+    border-radius: 4px;
+}
+QListWidget::item:selected {
+    background-color: #4a90d9;
+    color: #ffffff;
+}
+QListWidget::item:hover:!selected {
+    background-color: #e0e0e0;
+}
+QPushButton {
+    background-color: #e1e1e1;
+    border: 1px solid #c0c0c0;
+    border-radius: 4px;
+    padding: 6px 14px;
+    color: #333333;
+}
+QPushButton:hover { background-color: #d0d0d0; }
+QPushButton:pressed { background-color: #c0c0c0; }
+QLineEdit {
+    border: 1px solid #c0c0c0;
+    border-radius: 4px;
+    padding: 4px 8px;
+    background-color: #ffffff;
+    color: #333333;
+}
+QLineEdit:focus { border-color: #0078d4; }
+QStatusBar {
+    background-color: #f0f0f0;
+    border-top: 1px solid #dddddd;
+    color: #333333;
+}
+QSplitter::handle { background-color: #d0d0d0; width: 2px; }
+QLabel { color: #333333; }
+QHeaderView::section {
+    background-color: #f0f0f0;
+    padding: 4px 8px;
+    border: none;
+    border-right: 1px solid #d0d0d0;
+    border-bottom: 1px solid #d0d0d0;
+    color: #333333;
+}
+QComboBox {
+    border: 1px solid #c0c0c0;
+    border-radius: 4px;
+    padding: 4px 8px;
+    background-color: #ffffff;
+    color: #333333;
+}
+QTabWidget::pane { border: 1px solid #d0d0d0; background-color: #ffffff; }
+QTabBar::tab {
+    background-color: #e8e8e8;
+    padding: 8px 16px;
+    border: 1px solid #d0d0d0;
+    border-bottom: none;
+    color: #333333;
+}
+QTabBar::tab:selected { background-color: #ffffff; }
+QTextEdit {
+    border: 1px solid #c0c0c0;
+    border-radius: 4px;
+    background-color: #ffffff;
+    color: #333333;
+}
+QFrame[statsLabel="true"] {
+    background-color: #f5f5f5;
+    border-top: 1px solid #dddddd;
+}
+QMessageBox { background-color: #f5f5f5; }
+QDateEdit {
+    border: 1px solid #c0c0c0;
+    border-radius: 4px;
+    padding: 4px 8px;
+    background-color: #ffffff;
+}
+QScrollBar:vertical {
+    background-color: #f0f0f0;
+    width: 10px;
+}
+QScrollBar::handle:vertical {
+    background-color: #c0c0c0;
+    border-radius: 5px;
+    min-height: 20px;
+}
+"""
 
-DARK_THEME = {
-    "bg": "#1e1e1e",
-    "fg": "#d4d4d4",
-    "toolbar_bg": "#252526",
-    "stats_bg": "#2d2d2d",
-    "nav_bg": "#252526",
-    "nav_active": "#264f78",
-    "button_bg": "#3c3c3c",
-    "card_bg": "#2d2d2d",
-    "border": "#3e3e3e",
-    "status_bg": "#252526",
+THEME_DARK = """
+QMainWindow { background-color: #1e1e1e; }
+QTableWidget {
+    background-color: #252526;
+    alternate-background-color: #2d2d2d;
+    gridline-color: #3e3e3e;
+    selection-background-color: #264f78;
+    selection-color: #ffffff;
+    border: 1px solid #3e3e3e;
+    color: #d4d4d4;
 }
+QTableWidget::item { padding: 4px; }
+QListWidget {
+    background-color: #252526;
+    border: none;
+    outline: none;
+    color: #d4d4d4;
+}
+QListWidget::item {
+    padding: 8px 12px;
+    border-radius: 4px;
+}
+QListWidget::item:selected {
+    background-color: #264f78;
+    color: #ffffff;
+}
+QListWidget::item:hover:!selected {
+    background-color: #3c3c3c;
+}
+QPushButton {
+    background-color: #3c3c3c;
+    border: 1px solid #555555;
+    border-radius: 4px;
+    padding: 6px 14px;
+    color: #d4d4d4;
+}
+QPushButton:hover { background-color: #4a4a4a; }
+QPushButton:pressed { background-color: #555555; }
+QLineEdit {
+    border: 1px solid #555555;
+    border-radius: 4px;
+    padding: 4px 8px;
+    background-color: #3c3c3c;
+    color: #d4d4d4;
+}
+QLineEdit:focus { border-color: #0078d4; }
+QStatusBar {
+    background-color: #252526;
+    border-top: 1px solid #3e3e3e;
+    color: #d4d4d4;
+}
+QSplitter::handle { background-color: #3e3e3e; width: 2px; }
+QLabel { color: #d4d4d4; }
+QHeaderView::section {
+    background-color: #2d2d2d;
+    padding: 4px 8px;
+    border: none;
+    border-right: 1px solid #3e3e3e;
+    border-bottom: 1px solid #3e3e3e;
+    color: #d4d4d4;
+}
+QComboBox {
+    border: 1px solid #555555;
+    border-radius: 4px;
+    padding: 4px 8px;
+    background-color: #3c3c3c;
+    color: #d4d4d4;
+}
+QTabWidget::pane { border: 1px solid #3e3e3e; background-color: #252526; }
+QTabBar::tab {
+    background-color: #2d2d2d;
+    padding: 8px 16px;
+    border: 1px solid #3e3e3e;
+    border-bottom: none;
+    color: #d4d4d4;
+}
+QTabBar::tab:selected { background-color: #252526; }
+QTextEdit {
+    border: 1px solid #555555;
+    border-radius: 4px;
+    background-color: #252526;
+    color: #d4d4d4;
+}
+QFrame[statsLabel="true"] {
+    background-color: #2d2d2d;
+    border-top: 1px solid #3e3e3e;
+}
+QMessageBox { background-color: #2d2d2d; color: #d4d4d4; }
+QDateEdit {
+    border: 1px solid #555555;
+    border-radius: 4px;
+    padding: 4px 8px;
+    background-color: #3c3c3c;
+    color: #d4d4d4;
+}
+QScrollBar:vertical {
+    background-color: #2d2d2d;
+    width: 10px;
+}
+QScrollBar::handle:vertical {
+    background-color: #555555;
+    border-radius: 5px;
+    min-height: 20px;
+}
+"""
 
-SOLARIZED_LIGHT = {
-    "bg": "#fdf6e3", "fg": "#657b83",
-    "toolbar_bg": "#eee8d5", "stats_bg": "#eee8d5",
-    "nav_bg": "#eee8d5", "nav_active": "#268bd2",
-    "button_bg": "#93a1a1", "card_bg": "#eee8d5",
-    "border": "#93a1a1", "status_bg": "#eee8d5",
-}
-
-SOLARIZED_DARK = {
-    "bg": "#002b36", "fg": "#839496",
-    "toolbar_bg": "#073642", "stats_bg": "#073642",
-    "nav_bg": "#073642", "nav_active": "#2aa198",
-    "button_bg": "#586e75", "card_bg": "#073642",
-    "border": "#586e75", "status_bg": "#073642",
-}
-
-NORD = {
-    "bg": "#2e3440", "fg": "#d8dee9",
-    "toolbar_bg": "#3b4252", "stats_bg": "#3b4252",
-    "nav_bg": "#3b4252", "nav_active": "#5e81ac",
-    "button_bg": "#4c566a", "card_bg": "#3b4252",
-    "border": "#4c566a", "status_bg": "#3b4252",
-}
+THEME_SOLARIZED_LIGHT = THEME_DARK  # 占位 — 阶段二完善
+THEME_SOLARIZED_DARK = THEME_DARK   # 占位
+THEME_NORD = THEME_DARK             # 占位
 
 THEMES = {
-    "light": LIGHT_THEME, "dark": DARK_THEME,
-    "solarized_light": SOLARIZED_LIGHT,
-    "solarized_dark": SOLARIZED_DARK,
-    "nord": NORD,
+    "light": THEME_LIGHT,
+    "dark": THEME_DARK,
+    "solarized_light": THEME_SOLARIZED_LIGHT,
+    "solarized_dark": THEME_SOLARIZED_DARK,
+    "nord": THEME_NORD,
 }
 THEME_NAMES = ["light", "dark", "solarized_light", "solarized_dark", "nord"]
 THEME_DISPLAY = {
@@ -95,64 +254,19 @@ THEME_DISPLAY = {
 }
 
 
-class App:
-    """个人信息管理器主应用程序。"""
+class App(QMainWindow):
+    """个人信息管理器主应用程序 (PySide6)。"""
 
     def __init__(self):
-        self.root = tk.Tk()
-        self.root.title("个人信息管理器 (PIM)")
-        self.root.geometry("960x640")
-        self.root.minsize(800, 500)
+        super().__init__()
+        self.setWindowTitle("个人信息管理器 v1.3")
+        self.resize(960, 640)
+        self.setMinimumSize(800, 500)
 
-        # 字体缩放
+        self.config_manager = ConfigManager()
         self._font_scale = 1.0
 
-        # 加载配置
-        self.config_manager = ConfigManager()
-
-        self._restore_window_geometry()
-
-        # 应用主题
-        theme_name = self.config_manager.get_theme()
-        self.theme = THEMES.get(theme_name, LIGHT_THEME)
-        self.root.configure(bg=self.theme["bg"])
-
-        # 底部状态栏（必须在 _handle_master_password 之前创建，
-        # 因为解锁/设置对话框的回调会调用 set_status）
-        bottom_frame = tk.Frame(
-            self.root, bd=1, relief=tk.SUNKEN, bg=self.theme["status_bg"]
-        )
-        bottom_frame.pack(side=tk.BOTTOM, fill=tk.X)
-
-        self.status_var = tk.StringVar(value="就绪")
-        self.status_bar = tk.Label(
-            bottom_frame, textvariable=self.status_var,
-            anchor=tk.W, padx=8, font=("Microsoft YaHei", 9),
-            bg=self.theme["status_bg"], fg=self.theme["fg"]
-        )
-        self.status_bar.pack(side=tk.LEFT, fill=tk.X, expand=True)
-
-        # 主密码处理
-        self._handle_master_password()
-
-        version_label = tk.Label(
-            bottom_frame, text="v1.2  ",
-            anchor=tk.E, padx=8, font=("Microsoft YaHei", 9),
-            bg=self.theme["status_bg"], fg=self.theme["fg"]
-        )
-        version_label.pack(side=tk.RIGHT)
-
-        # 时钟
-        self.clock_var = tk.StringVar()
-        clock_label = tk.Label(
-            bottom_frame, textvariable=self.clock_var,
-            anchor=tk.E, padx=8, font=("Microsoft YaHei", 9),
-            bg=self.theme["status_bg"], fg=self.theme["fg"]
-        )
-        clock_label.pack(side=tk.RIGHT)
-        self._update_clock()
-
-        # 搜索管理器
+        # 搜索管理器（全局搜索复用）
         self._search_managers = {
             "skill": SkillManager(),
             "status": StatusManager(),
@@ -163,320 +277,174 @@ class App:
             "password": PasswordManager(),
         }
 
-        # 左侧导航栏
-        self.nav = NavFrame(
-            self.root, on_select=self._switch_page, theme=self.theme,
-            on_search=self._do_global_search,
-            on_navigate=self._on_global_navigate,
-        )
+        # 页面容器
+        self.stack = QStackedWidget()
+        self.pages: dict[str, QWidget] = {}
 
-        # 右侧内容区
-        self.content = tk.Frame(self.root, bg=self.theme["bg"])
-        self.content.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
+        # 导航栏
+        self.nav = NavFrame()
 
-        # 初始化页面
-        self.pages: dict[str, tk.Frame] = {}
+        # 主布局
+        self.splitter = QSplitter(Qt.Horizontal)
+        self.splitter.addWidget(self.nav)
+        self.splitter.addWidget(self.stack)
+        self.splitter.setStretchFactor(0, 0)
+        self.splitter.setStretchFactor(1, 1)
+        self.splitter.setSizes([170, 790])
+        self.setCentralWidget(self.splitter)
+
+        # 状态栏
+        self.status_bar = QStatusBar()
+        self.setStatusBar(self.status_bar)
+
+        self.clock_label = QLabel()
+        self.status_bar.addPermanentWidget(self.clock_label)
+
+        version_label = QLabel("v1.3  ")
+        self.status_bar.addPermanentWidget(version_label)
+
+        # 连接导航信号
+        self.nav.navigated.connect(self._switch_page)
+
+        # 初始化
         self._init_pages()
+        self._init_shortcuts()
+        self._apply_theme()
+        self._restore_window_geometry()
+        self._start_clock()
 
-        # 默认显示
+        # 默认页面
         last_module = self.config_manager.get_last_active_module()
         self._switch_page(last_module)
-        self.nav.set_active(last_module)
+        self.set_status("就绪")
 
-        # 绑定关闭事件
-        self.root.protocol("WM_DELETE_WINDOW", self._on_close)
-
-        # 键盘快捷键
-        self._bind_shortcuts()
-
-    # ---- 主密码 ----
-
-    def _handle_master_password(self) -> None:
-        """处理主密码：已配置则解锁，有密码数据但未配置则提示设置。"""
-        if CryptoService.is_configured():
-            # 已有主密码配置，弹出解锁对话框
-            self._show_unlock_dialog()
-        elif self._has_password_data():
-            # 有密码数据但未设置主密码（从旧版本升级），提示设置
-            self.root.after(500, self._show_setup_suggestion)
-
-    def _has_password_data(self) -> bool:
-        """检查是否存在密码数据。"""
-        pm = PasswordManager()
-        return pm.count() > 0
-
-    def _show_unlock_dialog(self) -> None:
-        """显示主密码解锁对话框。"""
-        dialog = tk.Toplevel(self.root)
-        dialog.title("主密码验证")
-        dialog.resizable(False, False)
-        dialog.transient(self.root)
-        dialog.grab_set()
-
-        # 居中
-        dialog.geometry("320x150")
-        dialog.update_idletasks()
-        x = self.root.winfo_x() + (self.root.winfo_width() - 320) // 2
-        y = self.root.winfo_y() + (self.root.winfo_height() - 150) // 2
-        dialog.geometry(f"+{x}+{y}")
-
-        frame = tk.Frame(dialog, padx=20, pady=16)
-        frame.pack(fill=tk.BOTH, expand=True)
-
-        tk.Label(
-            frame, text="请输入主密码以解锁密码管理功能：",
-            font=("Microsoft YaHei", 10)
-        ).pack(anchor=tk.W, pady=(0, 10))
-
-        pwd_var = tk.StringVar()
-        pwd_entry = tk.Entry(
-            frame, textvariable=pwd_var, show="*",
-            font=("Microsoft YaHei", 11), width=30
-        )
-        pwd_entry.pack(fill=tk.X, pady=(0, 12))
-        dialog.after_idle(pwd_entry.focus_set)
-
-        error_var = tk.StringVar()
-        error_label = tk.Label(
-            frame, textvariable=error_var,
-            font=("Microsoft YaHei", 9), fg="red"
-        )
-        error_label.pack(anchor=tk.W)
-
-        btn_frame = tk.Frame(frame)
-        btn_frame.pack(fill=tk.X, pady=(8, 0))
-
-        def do_unlock():
-            pwd = pwd_var.get()
-            try:
-                if CryptoService.unlock(pwd):
-                    dialog.destroy()
-                    self._check_password_migration()
-                    self.set_status("主密码已解锁")
-                else:
-                    error_var.set("主密码错误，请重试")
-                    pwd_var.set("")
-            except Exception as ex:
-                error_var.set(str(ex))
-                pwd_var.set("")
-
-        def do_skip():
-            dialog.destroy()
-            self.set_status("密码管理功能已锁定（主密码未解锁）")
-
-        cancel_btn = tk.Button(
-            btn_frame, text="跳过", command=do_skip,
-            font=("Microsoft YaHei", 9), padx=12, cursor="hand2"
-        )
-        cancel_btn.pack(side=tk.LEFT)
-
-        unlock_btn = tk.Button(
-            btn_frame, text="解锁", command=do_unlock,
-            font=("Microsoft YaHei", 9), padx=16, cursor="hand2"
-        )
-        unlock_btn.pack(side=tk.RIGHT)
-
-        pwd_entry.bind("<Return>", lambda e: do_unlock())
-        dialog.bind("<Escape>", lambda e: do_skip())
-
-        self.root.wait_window(dialog)
-
-    def _show_setup_suggestion(self) -> None:
-        """提示用户设置主密码（旧版本升级场景）。"""
-        result = messagebox.askyesno(
-            "设置主密码",
-            "检测到已有密码数据（v1.0 旧格式）。\n\n"
-            "v1.1 已升级为加密存储，建议立即设置主密码以保护数据安全。\n\n"
-            "是否现在设置主密码？\n"
-            "（选择「否」可稍后在密码管理页面设置）"
-        )
-        if result:
-            self._show_setup_dialog()
-
-    def _show_setup_dialog(self) -> None:
-        """显示主密码设置对话框。"""
-        dialog = tk.Toplevel(self.root)
-        dialog.title("设置主密码")
-        dialog.resizable(False, False)
-        dialog.transient(self.root)
-        dialog.grab_set()
-
-        dialog.geometry("350x220")
-        dialog.update_idletasks()
-        x = self.root.winfo_x() + (self.root.winfo_width() - 350) // 2
-        y = self.root.winfo_y() + (self.root.winfo_height() - 220) // 2
-        dialog.geometry(f"+{x}+{y}")
-
-        frame = tk.Frame(dialog, padx=20, pady=16)
-        frame.pack(fill=tk.BOTH, expand=True)
-
-        tk.Label(
-            frame, text="请设置主密码（至少 4 位）：",
-            font=("Microsoft YaHei", 10)
-        ).pack(anchor=tk.W, pady=(0, 10))
-
-        tk.Label(
-            frame, text="主密码：", font=("Microsoft YaHei", 9)
-        ).pack(anchor=tk.W)
-        pwd_var = tk.StringVar()
-        pwd_entry = tk.Entry(
-            frame, textvariable=pwd_var, show="*",
-            font=("Microsoft YaHei", 11)
-        )
-        pwd_entry.pack(fill=tk.X, pady=(2, 8))
-        dialog.after_idle(pwd_entry.focus_set)
-
-        tk.Label(
-            frame, text="确认密码：", font=("Microsoft YaHei", 9)
-        ).pack(anchor=tk.W)
-        confirm_var = tk.StringVar()
-        confirm_entry = tk.Entry(
-            frame, textvariable=confirm_var, show="*",
-            font=("Microsoft YaHei", 11)
-        )
-        confirm_entry.pack(fill=tk.X, pady=(2, 8))
-
-        error_var = tk.StringVar()
-        error_label = tk.Label(
-            frame, textvariable=error_var,
-            font=("Microsoft YaHei", 9), fg="red"
-        )
-        error_label.pack(anchor=tk.W)
-
-        # 密码强度指示
-        strength_var = tk.StringVar(value="")
-        strength_label = tk.Label(
-            frame, textvariable=strength_var,
-            font=("Microsoft YaHei", 9)
-        )
-        strength_label.pack(anchor=tk.W, pady=(4, 0))
-
-        def on_pwd_change(*args):
-            pwd = pwd_var.get()
-            if not pwd:
-                strength_var.set("")
-                return
-            info = CryptoService.get_password_strength(pwd)
-            labels = {"weak": "弱", "fair": "一般", "medium": "中等",
-                       "strong": "强", "very_strong": "非常强"}
-            colors = {"weak": "red", "fair": "orange", "medium": "#cc9900",
-                       "strong": "green", "very_strong": "darkgreen"}
-            strength_var.set(f"密码强度：{labels.get(info['level'], info['level'])}")
-            strength_label.configure(fg=colors.get(info["level"], "gray"))
-
-        pwd_var.trace_add("write", on_pwd_change)
-
-        btn_frame = tk.Frame(frame)
-        btn_frame.pack(fill=tk.X, pady=(8, 0))
-
-        def do_setup():
-            pwd = pwd_var.get()
-            confirm = confirm_var.get()
-            try:
-                CryptoService.setup_master_password(pwd, confirm)
-                dialog.destroy()
-                self._check_password_migration()
-                self.set_status("主密码已设置，密码数据已加密保护")
-            except ValueError as e:
-                error_var.set(str(e))
-
-        cancel_btn = tk.Button(
-            btn_frame, text="取消", command=dialog.destroy,
-            font=("Microsoft YaHei", 9), padx=12, cursor="hand2"
-        )
-        cancel_btn.pack(side=tk.LEFT)
-
-        save_btn = tk.Button(
-            btn_frame, text="设置", command=do_setup,
-            font=("Microsoft YaHei", 9), padx=16, cursor="hand2"
-        )
-        save_btn.pack(side=tk.RIGHT)
-
-        confirm_entry.bind("<Return>", lambda e: do_setup())
-        dialog.bind("<Escape>", lambda e: dialog.destroy())
-
-        self.root.wait_window(dialog)
-
-    def _check_password_migration(self) -> None:
-        """检查并执行密码数据迁移（base64 → v1 → v2）。"""
-        if not CryptoService.is_unlocked():
-            return
-        try:
-            pm = PasswordManager()
-            # 先迁移 base64
-            if self.config_manager.is_password_migration_pending():
-                count = pm.migrate_from_base64()
-                if count > 0:
-                    self.config_manager.clear_password_migration_flag()
-                    self.set_status(f"密码数据迁移完成：{count} 条已升级加密")
-
-            # 再检查 v1→v2 迁移
-            status = pm.get_migration_status()
-            if status.get("needs_migration"):
-                v2_count = pm.migrate_to_v2()
-                if v2_count > 0:
-                    self.set_status(f"密码加密升级完成：{v2_count} 条已升级为 v2 格式（HMAC 认证）")
-        except Exception:
-            pass  # 迁移失败不阻塞启动
+        # 主密码处理
+        self._handle_master_password()
 
     # ---- 页面初始化 ----
 
     def _init_pages(self) -> None:
-        """初始化所有功能页面。"""
-        self.pages["profile"] = ProfilePage(self.content, self.set_status)
-        self.pages["skill"] = SkillPage(self.content, self.set_status)
-        self.pages["status"] = StatusPage(self.content, self.set_status)
-        self.pages["knowledge"] = KnowledgePage(self.content, self.set_status)
-        self.pages["todo"] = TodoPage(self.content, self.set_status)
-        self.pages["habit"] = HabitPage(self.content, self.set_status)
-        self.pages["journal"] = JournalPage(self.content, self.set_status)
-        self.pages["password"] = PasswordPage(self.content, self.set_status)
-        self.pages["backup"] = BackupPage(self.content, self.set_status)
+        """初始化所有功能页面（渐进迁移：页面完成后自动加载）。"""
+        page_factories = {}
 
-        self.pages["dashboard"] = DashboardPage(
-            self.content, self.set_status, self._switch_page
-        )
+        # 阶段三：核心模块（上）
+        try:
+            from .DashboardPage import DashboardPage
+            page_factories["dashboard"] = lambda: DashboardPage(self.stack, self.set_status, self._switch_page)
+        except ImportError:
+            page_factories["dashboard"] = lambda: self._placeholder_page("数据概览")
+
+        try:
+            from .ProfilePage import ProfilePage
+            page_factories["profile"] = lambda: ProfilePage(self.stack, self.set_status)
+        except ImportError:
+            page_factories["profile"] = lambda: self._placeholder_page("个人档案")
+
+        try:
+            from .SkillPage import SkillPage
+            page_factories["skill"] = lambda: SkillPage(self.stack, self.set_status)
+        except ImportError:
+            page_factories["skill"] = lambda: self._placeholder_page("技能管理")
+
+        # 阶段四：核心模块（下）
+        try:
+            from .StatusPage import StatusPage
+            page_factories["status"] = lambda: StatusPage(self.stack, self.set_status)
+        except ImportError:
+            page_factories["status"] = lambda: self._placeholder_page("状态管理")
+
+        try:
+            from .KnowledgePage import KnowledgePage
+            page_factories["knowledge"] = lambda: KnowledgePage(self.stack, self.set_status)
+        except ImportError:
+            page_factories["knowledge"] = lambda: self._placeholder_page("知识管理")
+
+        try:
+            from .TodoPage import TodoPage
+            page_factories["todo"] = lambda: TodoPage(self.stack, self.set_status)
+        except ImportError:
+            page_factories["todo"] = lambda: self._placeholder_page("待办事项")
+
+        # 阶段五：功能模块
+        try:
+            from .HabitPage import HabitPage
+            page_factories["habit"] = lambda: HabitPage(self.stack, self.set_status)
+        except ImportError:
+            page_factories["habit"] = lambda: self._placeholder_page("习惯追踪")
+
+        try:
+            from .JournalPage import JournalPage
+            page_factories["journal"] = lambda: JournalPage(self.stack, self.set_status)
+        except ImportError:
+            page_factories["journal"] = lambda: self._placeholder_page("日记")
+
+        try:
+            from .PasswordPage import PasswordPage
+            page_factories["password"] = lambda: PasswordPage(self.stack, self.set_status)
+        except ImportError:
+            page_factories["password"] = lambda: self._placeholder_page("密码管理")
+
+        # 阶段六：收尾
+        try:
+            from .BackupPage import BackupPage
+            page_factories["backup"] = lambda: BackupPage(self.stack, self.set_status)
+        except ImportError:
+            page_factories["backup"] = lambda: self._placeholder_page("数据管理")
+
+        for name, factory in page_factories.items():
+            page = factory()
+            self.pages[name] = page
+            self.stack.addWidget(page)
+
+    def _placeholder_page(self, title: str) -> QWidget:
+        """占位页面（模块尚未迁移时显示）。"""
+        w = QWidget()
+        layout = QVBoxLayout(w)
+        label = QLabel(f"{title}\n\n模块迁移中...")
+        label.setAlignment(Qt.AlignCenter)
+        label.setFont(QFont("Microsoft YaHei", 14))
+        layout.addWidget(label)
+        return w
 
     # ---- 页面切换 ----
 
     def _switch_page(self, page_name: str) -> None:
         """切换内容区显示的页面。"""
-        for page in self.pages.values():
-            page.pack_forget()
         page = self.pages.get(page_name)
-        if page:
-            page.pack(fill=tk.BOTH, expand=True)
-            if hasattr(page, "refresh"):
-                page.refresh()
+        if page is None:
+            return
+        self.stack.setCurrentWidget(page)
+        if hasattr(page, "refresh"):
+            page.refresh()
+        if page_name != "dashboard":
             self.config_manager.set_last_active_module(page_name)
+        self.nav.set_active(page_name)
+
+    def _navigate_to(self, page_name: str) -> None:
+        """导航辅助方法（供 Dashboard 卡片点击使用）。"""
+        self._switch_page(page_name)
 
     # ---- 全局搜索 ----
 
-    def _do_global_search(self, keyword: str) -> list[SearchResult]:
-        """跨模块搜索，聚合结果（每模块最多 8 条，总计最多 20 条）。"""
+    def _do_global_search(self, keyword: str) -> list:
+        """跨模块搜索，聚合结果。"""
+        from .GlobalSearchBar import SearchResult
         results: list[SearchResult] = []
+        kw = keyword.lower()
 
-        # 技能
         for s in self._search_managers["skill"].search(keyword):
             results.append(SearchResult(
                 name=s.name, module="skill", item_id=s.id,
                 snippet=f"{s.category}  Lv{s.level}"
             ))
 
-        # 知识（笔记 + 电子书）
         for item in self._search_managers["knowledge"].search(keyword):
-            if item.item_type == "note":
-                results.append(SearchResult(
-                    name=item.title, module="note", item_id=item.id,
-                    snippet=item.category
-                ))
-            elif item.item_type == "ebook":
-                results.append(SearchResult(
-                    name=item.title, module="ebook", item_id=item.id,
-                    snippet=item.category
-                ))
+            mod = "note" if item.item_type == "note" else "ebook"
+            results.append(SearchResult(
+                name=item.title, module=mod, item_id=item.id,
+                snippet=item.category
+            ))
 
-        # 待办
         for t in self._search_managers["todo"].search(keyword):
             priority = {"high": "高", "mid": "中", "low": "低"}.get(t.priority, "")
             results.append(SearchResult(
@@ -484,53 +452,45 @@ class App:
                 snippet=f"{priority}优先级" if priority else ""
             ))
 
-        # 习惯
         for h in self._search_managers["habit"].search(keyword):
             results.append(SearchResult(
                 name=h.name, module="habit", item_id=h.id,
                 snippet=h.category
             ))
 
-        # 日记
         for j in self._search_managers["journal"].search(keyword):
             results.append(SearchResult(
-                name=j.date if j.title else f"{j.date} 日记",
+                name=j.title or f"{j.date} 日记",
                 module="journal", item_id=j.id,
-                snippet=j.title if j.title else j.content[:30]
+                snippet=j.title or j.content[:30]
             ))
 
-        # 密码（不搜索密码内容，仅搜索平台/账号）
         for p in self._search_managers["password"].search(keyword):
             results.append(SearchResult(
                 name=p.platform, module="password", item_id=p.id,
                 snippet=p.username
             ))
 
-        # 状态（搜索备注）
         for s in self._search_managers["status"].get_all():
             if kw in s.note.lower() or kw in s.date:
                 results.append(SearchResult(
                     name=s.date, module="status", item_id=s.id,
-                    snippet=f"心情{s.mood} 精力{s.energy}" if s.note else s.note[:16]
+                    snippet=f"心情{s.mood} 精力{s.energy}"
                 ))
 
         return results[:20]
 
     def _on_global_navigate(self, module: str, item_id: str) -> None:
-        """搜索结果导航：切换到目标页面并高亮条目。"""
+        """搜索结果导航。"""
         nav_map = {
             "skill": "skill", "note": "knowledge", "ebook": "knowledge",
             "todo": "todo", "habit": "habit", "journal": "journal",
-            "password": "password",
-            "status": "status",
+            "password": "password", "status": "status",
         }
         page_name = nav_map.get(module, module)
         self._switch_page(page_name)
-        self.nav.set_active(page_name)
-
         page = self.pages.get(page_name)
         if page and hasattr(page, "highlight_item"):
-            # 对于知识页面，传递子类型
             if page_name == "knowledge":
                 page.highlight_item(item_id, module)
             else:
@@ -540,12 +500,18 @@ class App:
 
     def set_status(self, message: str) -> None:
         """更新状态栏消息。"""
-        self.status_var.set(message)
+        self.status_bar.showMessage(message, 5000)
 
     # ---- 主题 ----
 
-    def _toggle_theme(self) -> None:
-        """循环切换 5 套主题。"""
+    def _apply_theme(self) -> None:
+        """应用主题样式表。"""
+        theme_name = self.config_manager.get_theme()
+        stylesheet = THEMES.get(theme_name, THEME_LIGHT)
+        QApplication.instance().setStyleSheet(stylesheet)
+
+    def _cycle_theme(self) -> None:
+        """循环切换主题。"""
         current = self.config_manager.get_theme()
         try:
             idx = THEME_NAMES.index(current)
@@ -553,51 +519,71 @@ class App:
             idx = 0
         new_theme = THEME_NAMES[(idx + 1) % len(THEME_NAMES)]
         self.config_manager.set_theme(new_theme)
+        self._apply_theme()
         display = THEME_DISPLAY.get(new_theme, new_theme)
-        messagebox.showinfo(
-            "主题切换",
-            f"已切换到「{display}」主题。\n请重启程序以完全应用。"
-        )
+        self.set_status(f"主题已切换：{display}")
 
     # ---- 快捷键 ----
 
-    def _bind_shortcuts(self) -> None:
-        """绑定全局键盘快捷键。"""
-        self.root.bind("<Control-t>", lambda e: self._toggle_theme())
-        self.root.bind("<Control-Shift-F>", lambda e: self._focus_search())
-        self.root.bind("<Control-s>", lambda e: self._focus_search())
-        self.root.bind("<Control-n>", lambda e: self._new_item_shortcut())
-        # 字体缩放
-        self.root.bind("<Control-equal>", lambda e: self._scale_fonts(0.1))
-        self.root.bind("<Control-minus>", lambda e: self._scale_fonts(-0.1))
-        self.root.bind("<Control-0>", lambda e: self._reset_font_scale())
-        # Ctrl+1~9 快速切换导航（前 9 个模块）
+    def _init_shortcuts(self) -> None:
+        """初始化键盘快捷键。"""
+        # Ctrl+T: 切换主题
+        switch_theme = QAction("切换主题", self)
+        switch_theme.setShortcut(QKeySequence("Ctrl+T"))
+        switch_theme.triggered.connect(self._cycle_theme)
+        self.addAction(switch_theme)
+
+        # Ctrl+Shift+F 或 Ctrl+S: 聚焦搜索（阶段六实现）
+        focus_search = QAction("全局搜索", self)
+        focus_search.setShortcut(QKeySequence("Ctrl+Shift+F"))
+        focus_search.triggered.connect(self.nav.focus_search)
+        self.addAction(focus_search)
+
+        focus_search2 = QAction("全局搜索2", self)
+        focus_search2.setShortcut(QKeySequence("Ctrl+S"))
+        focus_search2.triggered.connect(self.nav.focus_search)
+        self.addAction(focus_search2)
+
+        # Ctrl+N: 新建
+        new_action = QAction("新建", self)
+        new_action.setShortcut(QKeySequence("Ctrl+N"))
+        new_action.triggered.connect(self._new_item_shortcut)
+        self.addAction(new_action)
+
+        # Ctrl+= / Ctrl+- / Ctrl+0: 字体缩放
+        zoom_in = QAction("放大字体", self)
+        zoom_in.setShortcut(QKeySequence("Ctrl+="))
+        zoom_in.triggered.connect(lambda: self._scale_fonts(0.1))
+        self.addAction(zoom_in)
+
+        zoom_out = QAction("缩小字体", self)
+        zoom_out.setShortcut(QKeySequence("Ctrl+-"))
+        zoom_out.triggered.connect(lambda: self._scale_fonts(-0.1))
+        self.addAction(zoom_out)
+
+        zoom_reset = QAction("重置字体", self)
+        zoom_reset.setShortcut(QKeySequence("Ctrl+0"))
+        zoom_reset.triggered.connect(self._reset_font_scale)
+        self.addAction(zoom_reset)
+
+        # Ctrl+1~9: 快速导航（前 9 个模块）
         nav_order = ["profile", "status", "skill", "knowledge", "todo", "habit", "journal", "password", "backup"]
         for i, name in enumerate(nav_order):
             if i < 9:
-                self.root.bind(f"<Control-Key-{i + 1}>", lambda e, n=name: self._navigate(n))
-
-    def _navigate(self, page_name: str) -> None:
-        """导航到指定页面。"""
-        self._switch_page(page_name)
-        self.nav.set_active(page_name)
-
-    def _focus_search(self) -> None:
-        """聚焦全局搜索框。"""
-        if self.nav.search_bar:
-            self.nav.search_bar.focus()
+                action = QAction(f"导航{name}", self)
+                action.setShortcut(QKeySequence(f"Ctrl+{i + 1}"))
+                action.triggered.connect(lambda checked, n=name: self._switch_page(n))
+                self.addAction(action)
 
     def _new_item_shortcut(self) -> None:
         """Ctrl+N 触发当前页面的创建操作。"""
-        current_module = self.config_manager.get_last_active_module()
-        page = self.pages.get(current_module)
-        if page is None:
+        current_widget = self.stack.currentWidget()
+        if current_widget is None:
             return
-        # 各页面的创建方法名
         method_names = ["_open_add_dialog", "_open_create_dialog",
-                        "_open_import_dialog", "_toggle_edit"]
+                        "_open_import_dialog", "_toggle_edit", "add_item"]
         for method_name in method_names:
-            method = getattr(page, method_name, None)
+            method = getattr(current_widget, method_name, None)
             if callable(method):
                 method()
                 return
@@ -610,68 +596,244 @@ class App:
         if new_scale == self._font_scale:
             return
         self._font_scale = new_scale
-        self._walk_scale_fonts(self.root, self._font_scale)
+        font = QApplication.instance().font()
+        base_size = self.config_manager.get("font_size", 9)
+        font.setPointSize(int(base_size * new_scale))
+        QApplication.instance().setFont(font)
         self.set_status(f"字体缩放：{self._font_scale:.1f}x")
 
     def _reset_font_scale(self) -> None:
-        """重置字体缩放为 1.0。"""
+        """重置字体缩放。"""
         if self._font_scale == 1.0:
             return
         self._font_scale = 1.0
-        self._walk_scale_fonts(self.root, 1.0)
+        font = QApplication.instance().font()
+        base_size = self.config_manager.get("font_size", 9)
+        font.setPointSize(base_size)
+        QApplication.instance().setFont(font)
         self.set_status("字体缩放已重置")
 
-    def _walk_scale_fonts(self, widget: tk.Widget, scale: float) -> None:
-        """递归应用字体缩放到所有子控件。"""
-        for child in widget.winfo_children():
-            try:
-                font_info = tkfont.Font(font=child.cget("font"))
-                cfg = font_info.configure()
-                size = cfg.get("size", 9)
-                if size and isinstance(size, (int, float)) and size > 0:
-                    key = f"_base_size_{child}"
-                    if not hasattr(child, key):
-                        setattr(child, key, size)
-                    base = getattr(child, key)
-                    new_size = max(5, int(base * scale))
-                    font_info.configure(size=new_size)
-                    child.configure(font=font_info)
-            except Exception:
-                pass
-            self._walk_scale_fonts(child, scale)
+    # ---- 主密码 ----
 
-    # ---- 关闭 ----
+    def _handle_master_password(self) -> None:
+        """处理主密码：已配置则解锁，有密码数据但未配置则提示设置。"""
+        if CryptoService.is_configured():
+            QTimer.singleShot(100, self._show_unlock_dialog)
+        elif self._has_password_data():
+            QTimer.singleShot(500, self._show_setup_suggestion)
 
-    def _on_close(self) -> None:
-        """关闭窗口确认并保存几何。"""
-        if messagebox.askyesno("确认退出", "确定要退出个人信息管理器吗？"):
-            self._save_window_geometry()
-            self.root.destroy()
+    def _has_password_data(self) -> bool:
+        pm = PasswordManager()
+        return pm.count() > 0
+
+    def _show_unlock_dialog(self) -> None:
+        dialog = _PasswordUnlockDialog(self)
+        if dialog.exec() == QDialog.Accepted:
+            self._check_password_migration()
+            self.set_status("主密码已解锁")
+        else:
+            self.set_status("密码管理功能已锁定（主密码未解锁）")
+
+    def _show_setup_suggestion(self) -> None:
+        result = QMessageBox.question(
+            self, "设置主密码",
+            "检测到已有密码数据（旧格式）。\n\n"
+            "建议立即设置主密码以保护数据安全。\n\n"
+            "是否现在设置主密码？",
+            QMessageBox.Yes | QMessageBox.No, QMessageBox.Yes
+        )
+        if result == QMessageBox.Yes:
+            self._show_setup_dialog()
+
+    def _show_setup_dialog(self) -> None:
+        dialog = _PasswordSetupDialog(self)
+        if dialog.exec() == QDialog.Accepted:
+            self._check_password_migration()
+            self.set_status("主密码已设置，密码数据已加密保护")
+
+    def _check_password_migration(self) -> None:
+        if not CryptoService.is_unlocked():
+            return
+        try:
+            pm = PasswordManager()
+            if self.config_manager.is_password_migration_pending():
+                count = pm.migrate_from_base64()
+                if count > 0:
+                    self.config_manager.clear_password_migration_flag()
+                    self.set_status(f"密码数据迁移完成：{count} 条已升级加密")
+            status = pm.get_migration_status()
+            if status.get("needs_migration"):
+                v2_count = pm.migrate_to_v2()
+                if v2_count > 0:
+                    self.set_status(f"密码加密升级完成：{v2_count} 条已升级为 v2 格式（HMAC 认证）")
+        except Exception:
+            pass
+
+    # ---- 窗口几何 ----
 
     def _restore_window_geometry(self) -> None:
-        """恢复上次的窗口几何。"""
-        geo = self.config_manager.get_window_geometry()
-        if geo:
+        geo_hex = self.config_manager.get_window_geometry()
+        if geo_hex:
             try:
-                self.root.geometry(geo)
+                self.restoreGeometry(bytes.fromhex(geo_hex))
             except Exception:
                 pass
 
     def _save_window_geometry(self) -> None:
-        """保存当前窗口几何。"""
         try:
-            geo = self.root.geometry()
-            self.config_manager.set_window_geometry(geo)
+            geo_hex = self.saveGeometry().hex()
+            self.config_manager.set_window_geometry(geo_hex)
         except Exception:
             pass
 
-    def _update_clock(self) -> None:
-        """每分钟更新状态栏时钟。"""
-        self.clock_var.set(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
-        self.root.after(60000, self._update_clock)
+    # ---- 时钟 ----
 
-    # ---- 启动 ----
+    def _start_clock(self) -> None:
+        def update():
+            self.clock_label.setText(
+                datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            )
+        update()
+        self._clock_timer = QTimer()
+        self._clock_timer.timeout.connect(update)
+        self._clock_timer.start(60000)
 
-    def run(self) -> None:
-        """启动主事件循环。"""
-        self.root.mainloop()
+    # ---- 关闭 ----
+
+    def closeEvent(self, event) -> None:
+        result = QMessageBox.question(
+            self, "确认退出",
+            "确定要退出个人信息管理器吗？",
+            QMessageBox.Yes | QMessageBox.No, QMessageBox.No
+        )
+        if result == QMessageBox.Yes:
+            self._save_window_geometry()
+            event.accept()
+        else:
+            event.ignore()
+
+
+# ---- 主密码对话框 ----
+
+class _PasswordUnlockDialog(QDialog):
+    """主密码解锁对话框。"""
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("主密码验证")
+        self.setFixedSize(340, 160)
+        self.setModal(True)
+
+        layout = QVBoxLayout(self)
+        layout.setSpacing(10)
+
+        layout.addWidget(QLabel("请输入主密码以解锁密码管理功能："))
+
+        self.pwd_input = QLineEdit()
+        self.pwd_input.setEchoMode(QLineEdit.Password)
+        self.pwd_input.setPlaceholderText("主密码")
+        layout.addWidget(self.pwd_input)
+
+        self.error_label = QLabel()
+        self.error_label.setStyleSheet("color: red;")
+        self.error_label.setVisible(False)
+        layout.addWidget(self.error_label)
+
+        btn_layout = QHBoxLayout()
+        skip_btn = QPushButton("跳过")
+        skip_btn.clicked.connect(self.reject)
+        unlock_btn = QPushButton("解锁")
+        unlock_btn.clicked.connect(self._try_unlock)
+        unlock_btn.setDefault(True)
+        btn_layout.addWidget(skip_btn)
+        btn_layout.addStretch()
+        btn_layout.addWidget(unlock_btn)
+        layout.addLayout(btn_layout)
+
+        self.pwd_input.setFocus()
+
+    def _try_unlock(self) -> None:
+        pwd = self.pwd_input.text()
+        try:
+            if CryptoService.unlock(pwd):
+                self.accept()
+            else:
+                self.error_label.setText("主密码错误，请重试")
+                self.error_label.setVisible(True)
+                self.pwd_input.clear()
+                self.pwd_input.setFocus()
+        except Exception as ex:
+            self.error_label.setText(str(ex))
+            self.error_label.setVisible(True)
+            self.pwd_input.clear()
+
+
+class _PasswordSetupDialog(QDialog):
+    """主密码设置对话框。"""
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("设置主密码")
+        self.setFixedSize(380, 250)
+        self.setModal(True)
+
+        layout = QVBoxLayout(self)
+        layout.setSpacing(10)
+
+        layout.addWidget(QLabel("请设置主密码（至少 4 位）："))
+
+        layout.addWidget(QLabel("主密码："))
+        self.pwd_input = QLineEdit()
+        self.pwd_input.setEchoMode(QLineEdit.Password)
+        layout.addWidget(self.pwd_input)
+
+        layout.addWidget(QLabel("确认密码："))
+        self.confirm_input = QLineEdit()
+        self.confirm_input.setEchoMode(QLineEdit.Password)
+        layout.addWidget(self.confirm_input)
+
+        self.strength_label = QLabel()
+        layout.addWidget(self.strength_label)
+
+        self.error_label = QLabel()
+        self.error_label.setStyleSheet("color: red;")
+        self.error_label.setVisible(False)
+        layout.addWidget(self.error_label)
+
+        self.pwd_input.textChanged.connect(self._update_strength)
+
+        btn_layout = QHBoxLayout()
+        cancel_btn = QPushButton("取消")
+        cancel_btn.clicked.connect(self.reject)
+        setup_btn = QPushButton("设置")
+        setup_btn.clicked.connect(self._do_setup)
+        setup_btn.setDefault(True)
+        btn_layout.addWidget(cancel_btn)
+        btn_layout.addStretch()
+        btn_layout.addWidget(setup_btn)
+        layout.addLayout(btn_layout)
+
+        self.pwd_input.setFocus()
+
+    def _update_strength(self, pwd: str) -> None:
+        if not pwd:
+            self.strength_label.setText("")
+            return
+        info = CryptoService.get_password_strength(pwd)
+        labels = {"weak": "弱", "fair": "一般", "medium": "中等",
+                   "strong": "强", "very_strong": "非常强"}
+        colors = {"weak": "red", "fair": "orange", "medium": "#cc9900",
+                   "strong": "green", "very_strong": "darkgreen"}
+        level = info.get("level", "weak")
+        self.strength_label.setText(f"密码强度：{labels.get(level, level)}")
+        self.strength_label.setStyleSheet(f"color: {colors.get(level, 'gray')};")
+
+    def _do_setup(self) -> None:
+        pwd = self.pwd_input.text()
+        confirm = self.confirm_input.text()
+        try:
+            CryptoService.setup_master_password(pwd, confirm)
+            self.accept()
+        except ValueError as e:
+            self.error_label.setText(str(e))
+            self.error_label.setVisible(True)

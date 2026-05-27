@@ -1,114 +1,142 @@
-"""页面基类 — 提供统计栏、右键菜单、条目标亮、列排序等通用功能。"""
+"""页面基类 — QWidget 版本，提供表格、排序、右键菜单等通用功能。"""
 
-import tkinter as tk
-from tkinter import messagebox
-from typing import Callable
+from PySide6.QtWidgets import (
+    QWidget, QVBoxLayout, QHBoxLayout, QTableWidget, QTableWidgetItem,
+    QHeaderView, QMenu, QMessageBox, QLabel, QFrame
+)
+from PySide6.QtCore import Qt, Signal
+from PySide6.QtGui import QAction
 
 
-class BasePage(tk.Frame):
+class BasePage(QWidget):
     """所有表格式页面的基类，减少重复代码。"""
 
-    def __init__(self, parent: tk.Widget, set_status):
-        super().__init__(parent, bg="#ffffff")
-        self.set_status = set_status
-        self._sort_state: dict[str, str] = {}  # col -> "asc"/"desc"
+    status_message = Signal(str)
 
-    # ---- 统计栏 ----
+    def __init__(self, parent=None, set_status=None):
+        super().__init__(parent)
+        self._set_status = set_status
+        self._sort_state: dict[str, str] = {}
 
-    def _build_stats_bar(self, pady: int = 6) -> None:
-        self.stats_var = tk.StringVar()
-        stats = tk.Label(
-            self, textvariable=self.stats_var, bg="#f5f5f5",
-            font=("Microsoft YaHei", 9), fg="#666666", pady=pady
-        )
-        stats.pack(fill=tk.X, side=tk.BOTTOM)
+        self._layout = QVBoxLayout(self)
+        self._layout.setContentsMargins(0, 0, 0, 0)
+        self._layout.setSpacing(0)
+
+        # 表格
+        self.table = QTableWidget()
+        self.table.setSelectionBehavior(QTableWidget.SelectRows)
+        self.table.setSelectionMode(QTableWidget.SingleSelection)
+        self.table.setEditTriggers(QTableWidget.NoEditTriggers)
+        self.table.setAlternatingRowColors(True)
+        self.table.verticalHeader().setVisible(False)
+        self.table.horizontalHeader().setStretchLastSection(True)
+        self.table.setSortingEnabled(True)
+        self.table.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.table.customContextMenuRequested.connect(self._on_context_menu)
+        self._layout.addWidget(self.table)
+
+        # 统计栏容器
+        self.stats_frame = QFrame()
+        self.stats_frame.setFrameStyle(QFrame.StyledPanel)
+        self.stats_layout = QHBoxLayout(self.stats_frame)
+        self.stats_layout.setContentsMargins(8, 4, 8, 4)
+        self._layout.addWidget(self.stats_frame)
+
+    # ---- 选中 ID ----
+
+    def _get_selected_id(self) -> str | None:
+        """获取当前选中行的 ID（存储在首列 UserRole 中）。"""
+        row = self.table.currentRow()
+        if row < 0:
+            return None
+        item = self.table.item(row, 0)
+        if item:
+            return item.data(Qt.UserRole)
+        return None
+
+    def _get_all_ids(self) -> list[str]:
+        """获取所有行的 ID。"""
+        ids = []
+        for row in range(self.table.rowCount()):
+            item = self.table.item(row, 0)
+            if item:
+                ids.append(item.data(Qt.UserRole))
+        return ids
+
+    # ---- 清空 / 填充辅助 ----
+
+    def _clear_table(self) -> None:
+        """清空表格所有行。"""
+        self.table.setRowCount(0)
+
+    def _add_row(self, row_data: list[str], item_id: str = "") -> None:
+        """添加一行数据，可选的 item_id 存储在首列 UserRole 中。"""
+        row = self.table.rowCount()
+        self.table.insertRow(row)
+        for col, text in enumerate(row_data):
+            item = QTableWidgetItem(str(text))
+            if col == 0 and item_id:
+                item.setData(Qt.UserRole, item_id)
+            self.table.setItem(row, col, item)
 
     # ---- 右键菜单 ----
 
-    def _build_context_menu(self, items: list[tuple[str, object]]) -> None:
-        """items: [(label, command), ("---", None) 表示分隔线]"""
-        self.context_menu = tk.Menu(self, tearoff=0)
-        for label, cmd in items:
-            if label == "---":
-                self.context_menu.add_separator()
-            else:
-                self.context_menu.add_command(label=label, command=cmd)
-        self.tree.bind("<Button-3>", self._show_context_menu)
+    def _on_context_menu(self, pos) -> None:
+        """右键菜单入口。"""
+        menu = self._build_context_menu()
+        if menu:
+            menu.exec(self.table.viewport().mapToGlobal(pos))
 
-    def _show_context_menu(self, event) -> None:
-        tree = event.widget
-        item = tree.identify_row(event.y)
-        if item:
-            tree.selection_set(item)
-            self.context_menu.post(event.x_root, event.y_root)
+    def _build_context_menu(self) -> QMenu | None:
+        """子类重写以构建自定义右键菜单。返回 None 则无菜单。"""
+        return None
 
-    # ---- 选中 / 高亮 ----
-
-    def _get_selected_id(self, prompt: str = "请先选中一条记录") -> str | None:
-        """获取当前选中行的 ID。"""
-        selection = self.tree.selection()
-        if not selection:
-            messagebox.showinfo("提示", prompt)
-            return None
-        return selection[0]
+    # ---- 高亮 ----
 
     def highlight_item(self, item_id: str) -> None:
         """定位并高亮指定条目。"""
-        if not self.tree.exists(item_id):
-            return
-        self.tree.selection_set(item_id)
-        self.tree.see(item_id)
-        self.tree.focus(item_id)
+        for row in range(self.table.rowCount()):
+            item = self.table.item(row, 0)
+            if item and item.data(Qt.UserRole) == item_id:
+                self.table.selectRow(row)
+                self.table.scrollToItem(item)
+                return
 
-    # ---- 辅助 ----
+    # ---- 状态栏 ----
 
-    def _clear_tree(self) -> None:
-        """清空 Treeview 所有行。"""
-        for item in self.tree.get_children():
-            self.tree.delete(item)
+    def emit_status(self, text: str) -> None:
+        """发送状态栏消息。"""
+        if self._set_status:
+            self._set_status(text)
+        self.status_message.emit(text)
 
-    # ---- 列排序 ----
+    # ---- 统计栏 ----
 
-    def _make_sortable(self, tree: tk.Widget, columns: dict[str, Callable],
-                       initial_sort: str | None = None) -> None:
-        """使 Treeview 的表头可点击排序。
+    def _set_stats_text(self, text: str) -> None:
+        """设置统计栏文本。"""
+        # 清除旧标签
+        for i in reversed(range(self.stats_layout.count())):
+            w = self.stats_layout.itemAt(i).widget()
+            if w:
+                w.deleteLater()
+        label = QLabel(text)
+        label.setProperty("statsLabel", True)
+        self.stats_layout.addWidget(label)
 
-        columns: {"列名": key_func}，key_func(item_id) 返回排序键。
-        """
-        self._sort_keys = columns
-        self._sort_widget = tree
+    # ---- 确认对话框 ----
 
-        for col_name in columns:
-            tree.heading(
-                col_name,
-                command=lambda c=col_name: self._sort_by(c)
-            )
+    @staticmethod
+    def _confirm(title: str, message: str) -> bool:
+        return QMessageBox.question(
+            None, title, message,
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.No
+        ) == QMessageBox.Yes
 
-        if initial_sort and initial_sort in columns:
-            self._sort_by(initial_sort)
+    @staticmethod
+    def _info(title: str, message: str) -> None:
+        QMessageBox.information(None, title, message)
 
-    def _sort_by(self, col: str) -> None:
-        """按指定列排序并刷新显示。"""
-        tree = self._sort_widget
-        key_func = self._sort_keys.get(col)
-        if not key_func:
-            return
-
-        # 切换排序方向
-        prev = self._sort_state.get(col, "asc")
-        direction = "desc" if prev == "asc" else "asc"
-        self._sort_state[col] = direction
-
-        # 收集所有行数据
-        rows = []
-        for item_id in tree.get_children():
-            values = tree.item(item_id, "values")
-            rows.append((key_func(item_id, values), item_id, values))
-
-        # 排序
-        reverse = direction == "desc"
-        rows.sort(key=lambda r: r[0], reverse=reverse)
-
-        # 重新排列
-        for i, (_, item_id, values) in enumerate(rows):
-            tree.move(item_id, "", i)
+    @staticmethod
+    def _warning(title: str, message: str) -> None:
+        QMessageBox.warning(None, title, message)
