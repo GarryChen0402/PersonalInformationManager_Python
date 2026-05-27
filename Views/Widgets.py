@@ -408,7 +408,7 @@ class CalendarNav(QWidget):
         for d in self.WEEKDAY_HEADERS:
             lbl = QLabel(d)
             lbl.setAlignment(Qt.AlignCenter)
-            lbl.setFixedWidth(32)
+            lbl.setFixedWidth(52)
             lbl.setStyleSheet("color: #888; font-size: 10px;")
             week_header.addWidget(lbl)
         layout.addLayout(week_header)
@@ -449,7 +449,7 @@ class CalendarNav(QWidget):
                     is_selected = date_str == self.selected_date
 
                     btn = QPushButton(text)
-                    btn.setFixedSize(32, 28)
+                    btn.setFixedSize(52, 40)
                     btn.setFlat(True)
                     btn.clicked.connect(lambda checked, d=date_str: self.select_date(d))
 
@@ -465,12 +465,10 @@ class CalendarNav(QWidget):
                         )
                     elif is_marked:
                         btn.setStyleSheet(
-                            "QPushButton { color: #333; border-radius: 4px; }"
-                            "QPushButton:hover { background-color: #e8e8e8; }"
+                            "QPushButton { background-color: #e0f0e0; color: #333; "
+                            "border-radius: 4px; font-weight: bold; }"
+                            "QPushButton:hover { background-color: #c8e6c8; }"
                         )
-                        # 底部小圆点标记
-                        btn.setText(f"{day_num}\n●")
-                        btn.setFont(QFont("Microsoft YaHei", 7))
                     else:
                         btn.setStyleSheet(
                             "QPushButton { color: #333; border-radius: 4px; }"
@@ -481,7 +479,7 @@ class CalendarNav(QWidget):
                     self._day_buttons.append(btn)
                 else:
                     spacer = QLabel()
-                    spacer.setFixedSize(32, 28)
+                    spacer.setFixedSize(52, 40)
                     self._grid.addWidget(spacer, row, col)
 
     def select_date(self, date_str: str) -> None:
