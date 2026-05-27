@@ -1,15 +1,17 @@
-"""个人档案页面。"""
+"""个人档案页面 — PySide6 版本。"""
 
-import tkinter as tk
-from tkinter import ttk, filedialog, messagebox
+from PySide6.QtWidgets import (
+    QWidget, QVBoxLayout, QHBoxLayout, QFormLayout, QLabel, QLineEdit,
+    QComboBox, QTextEdit, QPushButton, QFrame, QFileDialog, QMessageBox
+)
+from PySide6.QtCore import Qt
+from PySide6.QtGui import QFont
 
-from Models.Profile import Profile
 from Services.ProfileManager import ProfileManager
-
 
 FIELDS = [
     ("name", "姓名", "text"),
-    ("gender", "性别", "combobox"),
+    ("gender", "性别", "combo"),
     ("birthday", "生日", "text"),
     ("phone", "手机", "text"),
     ("email", "邮箱", "text"),
@@ -22,160 +24,124 @@ FIELDS = [
 ]
 
 
-class ProfilePage(tk.Frame):
+class ProfilePage(QWidget):
     """个人档案管理页面，表单式编辑。"""
 
-    def __init__(self, parent: tk.Widget, set_status):
-        super().__init__(parent, bg="#ffffff")
+    def __init__(self, parent=None, set_status=None):
+        super().__init__(parent)
         self.manager = ProfileManager()
         self.set_status = set_status
         self.editing = False
-        self.widgets: dict[str, tk.Widget] = {}
+        self.widgets: dict[str, QWidget] = {}
 
-        self._build_header()
-        self._build_form()
-        self._build_summary()
+        self._build()
 
-    # ---- 头部 ----
+    def _build(self) -> None:
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(16, 16, 16, 16)
+        layout.setSpacing(12)
 
-    def _build_header(self) -> None:
-        header = tk.Frame(self, bg="#fafafa", pady=10)
-        header.pack(fill=tk.X, padx=16, pady=(16, 0))
+        # 标题
+        header = QHBoxLayout()
+        title_lbl = QLabel("个人档案")
+        title_lbl.setFont(QFont("Microsoft YaHei", 16, QFont.Bold))
+        header.addWidget(title_lbl)
+        header.addStretch()
 
-        tk.Label(
-            header, text="个人档案", bg="#fafafa",
-            font=("Microsoft YaHei", 16, "bold")
-        ).pack(side=tk.LEFT)
+        self.edit_btn = QPushButton("编辑")
+        self.edit_btn.clicked.connect(self._toggle_edit)
+        header.addWidget(self.edit_btn)
 
-        self.edit_btn = tk.Button(
-            header, text="编辑", command=self._toggle_edit,
-            font=("Microsoft YaHei", 9), padx=12,
-            cursor="hand2"
-        )
-        self.edit_btn.pack(side=tk.RIGHT, padx=4)
+        export_btn = QPushButton("导出")
+        export_btn.clicked.connect(self._export)
+        header.addWidget(export_btn)
+        layout.addLayout(header)
 
-        export_btn = tk.Button(
-            header, text="导出", command=self._export,
-            font=("Microsoft YaHei", 9), padx=12,
-            cursor="hand2"
-        )
-        export_btn.pack(side=tk.RIGHT, padx=4)
+        # 表单
+        form_container = QWidget()
+        form = QFormLayout(form_container)
+        form.setSpacing(8)
 
-    # ---- 表单 ----
-
-    def _build_form(self) -> None:
-        container = tk.Frame(self, bg="#ffffff")
-        container.pack(fill=tk.BOTH, expand=True, padx=32, pady=16)
-
-        for i, (field, label, kind) in enumerate(FIELDS):
-            lbl = tk.Label(
-                container, text=f"{label}：", bg="#ffffff",
-                font=("Microsoft YaHei", 10), anchor=tk.E, width=8
-            )
-            lbl.grid(row=i, column=0, sticky=tk.NE, padx=(0, 8), pady=4)
-
-            if kind == "combobox":
-                widget = ttk.Combobox(
-                    container, values=["男", "女", "其他"],
-                    state="readonly", font=("Microsoft YaHei", 10)
-                )
-                widget.grid(row=i, column=1, sticky=tk.EW, pady=4)
+        for field, label, kind in FIELDS:
+            if kind == "combo":
+                widget = QComboBox()
+                widget.addItems(["男", "女", "其他"])
+                widget.setEnabled(False)
             elif kind == "textarea":
-                widget = tk.Text(
-                    container, height=3, font=("Microsoft YaHei", 10),
-                    wrap=tk.WORD, state=tk.DISABLED
-                )
-                widget.grid(row=i, column=1, sticky=tk.EW, pady=4)
+                widget = QTextEdit()
+                widget.setMaximumHeight(80)
+                widget.setReadOnly(True)
             else:
-                widget = tk.Entry(
-                    container, font=("Microsoft YaHei", 10),
-                    state=tk.DISABLED
-                )
-                widget.grid(row=i, column=1, sticky=tk.EW, pady=4)
+                widget = QLineEdit()
+                widget.setReadOnly(True)
 
             self.widgets[field] = widget
+            form.addRow(label + "：", widget)
 
-        container.columnconfigure(1, weight=1)
+        layout.addWidget(form_container)
 
-    # ---- 底部统计 ----
-
-    def _build_summary(self) -> None:
-        self.summary_var = tk.StringVar()
-        summary = tk.Label(
-            self, textvariable=self.summary_var, bg="#f5f5f5",
-            font=("Microsoft YaHei", 9), fg="#666666", pady=6
-        )
-        summary.pack(fill=tk.X, side=tk.BOTTOM)
-
-    # ---- 数据加载 ----
+        # 统计栏
+        self.summary_label = QLabel()
+        self.summary_label.setProperty("statsLabel", True)
+        self.summary_label.setStyleSheet("color: #666666; font-size: 11px; padding: 6px;")
+        layout.addWidget(self.summary_label)
 
     def refresh(self) -> None:
-        """从 Manager 重新加载档案数据并刷新界面。"""
         profile = self.manager.get_profile()
         for field, _label, kind in FIELDS:
             value = getattr(profile, field, "")
             widget = self.widgets[field]
             if kind == "textarea":
-                self._set_text(widget, value)
-            elif kind == "combobox":
-                if value:
-                    widget.set(value)
-                else:
-                    widget.set("")
+                widget.setPlainText(str(value) if value else "")
+            elif kind == "combo":
+                widget.setCurrentText(value if value else "")
             else:
-                self._set_entry(widget, value)
+                widget.setText(str(value) if value else "")
         self._update_summary()
-
-    # ---- 编辑状态切换 ----
 
     def _toggle_edit(self) -> None:
         if self.editing:
             self._save()
         else:
             self.editing = True
-            self.edit_btn.configure(text="保存")
-            self._set_fields_state(tk.NORMAL)
-            if isinstance(self.widgets["gender"], ttk.Combobox):
-                self.widgets["gender"].configure(state="readonly")
+            self.edit_btn.setText("保存")
+            self._set_fields_enabled(True)
 
     def _save(self) -> None:
         data = {}
         for field, _label, kind in FIELDS:
             widget = self.widgets[field]
             if kind == "textarea":
-                data[field] = widget.get("1.0", tk.END).strip()
-            elif kind == "combobox":
-                data[field] = widget.get()
+                data[field] = widget.toPlainText().strip()
+            elif kind == "combo":
+                data[field] = widget.currentText()
             else:
-                data[field] = widget.get().strip()
+                data[field] = widget.text().strip()
 
         try:
             self.manager.update_profile(**data)
             self.editing = False
-            self.edit_btn.configure(text="编辑")
-            self._set_fields_state(tk.DISABLED)
+            self.edit_btn.setText("编辑")
+            self._set_fields_enabled(False)
             self._update_status("档案已保存")
             self._update_summary()
         except Exception as e:
-            messagebox.showerror("保存失败", str(e))
+            QMessageBox.critical(self, "保存失败", str(e))
 
-    def _set_fields_state(self, state: str) -> None:
+    def _set_fields_enabled(self, enabled: bool) -> None:
         for field, _label, kind in FIELDS:
             widget = self.widgets[field]
-            if kind == "combobox":
-                widget.configure(state="readonly" if state == tk.DISABLED else "readonly")
+            if kind == "combo":
+                widget.setEnabled(enabled)
             elif kind == "textarea":
-                widget.configure(state=state)
+                widget.setReadOnly(not enabled)
             else:
-                widget.configure(state=state)
-
-    # ---- 导出 ----
+                widget.setReadOnly(not enabled)
 
     def _export(self) -> None:
-        path = filedialog.asksaveasfilename(
-            defaultextension=".json",
-            filetypes=[("JSON 文件", "*.json"), ("CSV 文件", "*.csv")],
-            initialfile="profile.json"
+        path, _ = QFileDialog.getSaveFileName(
+            self, "导出档案", "profile.json",
+            "JSON 文件 (*.json);;CSV 文件 (*.csv)"
         )
         if path:
             try:
@@ -185,32 +151,14 @@ class ProfilePage(tk.Frame):
                     self.manager.export_profile(path)
                 self._update_status(f"档案已导出到 {path}")
             except Exception as e:
-                messagebox.showerror("导出失败", str(e))
-
-    # ---- 统计 ----
+                QMessageBox.critical(self, "导出失败", str(e))
 
     def _update_summary(self) -> None:
         s = self.manager.get_summary()
-        self.summary_var.set(
+        self.summary_label.setText(
             f"档案完整度：{s['filled']}/{s['total']} 字段已填写"
             f"    最后更新：{s['last_updated']}"
         )
-
-    # ---- 工具方法 ----
-
-    def _set_entry(self, widget: tk.Entry, value: str) -> None:
-        state = widget.cget("state")
-        widget.configure(state=tk.NORMAL)
-        widget.delete(0, tk.END)
-        widget.insert(0, value)
-        widget.configure(state=state)
-
-    def _set_text(self, widget: tk.Text, value: str) -> None:
-        state = widget.cget("state")
-        widget.configure(state=tk.NORMAL)
-        widget.delete("1.0", tk.END)
-        widget.insert("1.0", value)
-        widget.configure(state=state)
 
     def _update_status(self, message: str) -> None:
         if self.set_status:

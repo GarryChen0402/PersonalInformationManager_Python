@@ -1,7 +1,11 @@
-"""技能管理页面。"""
+"""技能管理页面 — PySide6 版本。"""
 
-import tkinter as tk
-from tkinter import ttk, filedialog, messagebox
+from PySide6.QtWidgets import (
+    QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QComboBox, QLabel,
+    QTableWidgetItem, QFileDialog, QMessageBox, QMenu, QHeaderView
+)
+from PySide6.QtCore import Qt, Signal
+from PySide6.QtGui import QAction
 
 from Services.SkillManager import SkillManager
 from Models.Skill import Skill
@@ -13,119 +17,82 @@ from .ChartWidgets import RadarChart, BarChart
 class SkillPage(BasePage):
     """技能管理页面，三段式布局。"""
 
-    def __init__(self, parent: tk.Widget, set_status):
+    def __init__(self, parent=None, set_status=None):
         super().__init__(parent, set_status)
         self.manager = SkillManager()
 
         self._build_toolbar()
         self._build_charts()
-        self._build_table()
-        self._build_context_menu([
-            ("编辑", self._open_edit_dialog),
-            ("---", None),
-            ("删除", self._confirm_delete),
-        ])
-        self._build_stats_bar()
+        self._build_table_columns()
+        self._build_context_menu()
 
     # ---- 工具栏 ----
 
     def _build_toolbar(self) -> None:
-        toolbar = tk.Frame(self, bg="#fafafa", pady=8)
-        toolbar.pack(fill=tk.X, padx=12, pady=(12, 0))
+        toolbar = QWidget()
+        toolbar_layout = QHBoxLayout(toolbar)
+        toolbar_layout.setContentsMargins(0, 4, 0, 4)
 
-        self.search_bar = SearchBar(toolbar, on_search=self._on_search)
-        self.search_bar.pack(side=tk.LEFT, padx=4)
+        self.search_bar = SearchBar(placeholder="搜索技能...")
+        self.search_bar.search_requested.connect(self._on_search)
+        toolbar_layout.addWidget(self.search_bar)
 
-        tk.Label(toolbar, text="类别：", bg="#fafafa",
-                 font=("Microsoft YaHei", 9)).pack(side=tk.LEFT, padx=(8, 2))
+        toolbar_layout.addWidget(QLabel("类别："))
+        self.category_filter = QComboBox()
+        self.category_filter.currentTextChanged.connect(self._on_filter)
+        toolbar_layout.addWidget(self.category_filter)
 
-        self.category_filter = ttk.Combobox(
-            toolbar, state="readonly", width=10,
-            font=("Microsoft YaHei", 9)
-        )
-        self.category_filter.pack(side=tk.LEFT, padx=4)
-        self.category_filter.bind("<<ComboboxSelected>>", lambda e: self._on_filter())
+        toolbar_layout.addStretch()
 
-        import_btn = tk.Button(
-            toolbar, text="导入CSV", command=self._import_csv,
-            font=("Microsoft YaHei", 9), padx=12, cursor="hand2"
-        )
-        import_btn.pack(side=tk.RIGHT, padx=4)
+        add_btn = QPushButton("+ 添加技能")
+        add_btn.clicked.connect(self._open_add_dialog)
+        toolbar_layout.addWidget(add_btn)
 
-        export_btn = tk.Button(
-            toolbar, text="导出CSV", command=self._export_csv,
-            font=("Microsoft YaHei", 9), padx=12, cursor="hand2"
-        )
-        export_btn.pack(side=tk.RIGHT, padx=4)
+        export_btn = QPushButton("导出CSV")
+        export_btn.clicked.connect(self._export_csv)
+        toolbar_layout.addWidget(export_btn)
 
-        add_btn = tk.Button(
-            toolbar, text="+ 添加技能", command=self._open_add_dialog,
-            font=("Microsoft YaHei", 9), padx=12, cursor="hand2"
-        )
-        add_btn.pack(side=tk.RIGHT, padx=4)
+        import_btn = QPushButton("导入CSV")
+        import_btn.clicked.connect(self._import_csv)
+        toolbar_layout.addWidget(import_btn)
+
+        self._layout.insertWidget(0, toolbar)
 
     # ---- 表格 ----
 
-    def _build_table(self) -> None:
-        columns = ("name", "category", "level", "hours", "description")
-        self.tree = ttk.Treeview(self, columns=columns, show="headings",
-                                 selectmode="browse")
-
-        self.tree.heading("name", text="技能名称")
-        self.tree.heading("category", text="类别")
-        self.tree.heading("level", text="熟练度")
-        self.tree.heading("hours", text="学习时长(h)")
-        self.tree.heading("description", text="描述")
-
-        self.tree.column("name", width=150)
-        self.tree.column("category", width=80)
-        self.tree.column("level", width=60, anchor=tk.CENTER)
-        self.tree.column("hours", width=90, anchor=tk.CENTER)
-        self.tree.column("description", width=200)
-
-        scrollbar = ttk.Scrollbar(self, orient=tk.VERTICAL, command=self.tree.yview)
-        self.tree.configure(yscrollcommand=scrollbar.set)
-
-        self.tree.pack(fill=tk.BOTH, expand=True, padx=12, pady=8)
-        scrollbar.pack(side=tk.RIGHT, fill=tk.Y, padx=(0, 12), pady=8)
-
-        self.tree.bind("<Double-1>", lambda e: self._open_edit_dialog())
+    def _build_table_columns(self) -> None:
+        self.table.setColumnCount(5)
+        self.table.setHorizontalHeaderLabels(["技能名称", "类别", "熟练度", "学习时长(h)", "描述"])
+        self.table.horizontalHeader().setSectionResizeMode(0, QHeaderView.Stretch)
+        self.table.horizontalHeader().setSectionResizeMode(4, QHeaderView.Stretch)
+        self.table.doubleClicked.connect(self._open_edit_dialog)
 
     # ---- 图表 ----
 
     def _build_charts(self) -> None:
-        """构建技能图表区域（雷达图 + 柱状图并排）。"""
-        charts_frame = tk.Frame(self, bg="#ffffff")
-        charts_frame.pack(fill=tk.X, padx=12, pady=(4, 0))
+        charts_widget = QWidget()
+        charts_layout = QHBoxLayout(charts_widget)
+        charts_layout.setContentsMargins(0, 0, 0, 0)
 
-        left = tk.Frame(charts_frame, bg="#ffffff")
-        left.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 4))
+        self.radar_chart = RadarChart(title="技能分布")
+        charts_layout.addWidget(self.radar_chart)
 
-        self.radar_chart = RadarChart(left, width=280, height=260, title="技能分布")
-        self.radar_chart.pack()
+        self.bar_chart = BarChart(title="类别分布")
+        charts_layout.addWidget(self.bar_chart)
 
-        right = tk.Frame(charts_frame, bg="#ffffff")
-        right.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(4, 0))
-
-        self.bar_chart = BarChart(right, width=280, height=260, title="类别分布")
-        self.bar_chart.pack()
+        self._layout.insertWidget(1, charts_widget)
 
     def _load_chart_data(self) -> None:
-        """加载图表数据。"""
         skills = self.manager.get_all()
 
-        # 雷达图：熟练度最高的前 6 项技能
         top = skills[:6]
         if top:
             self.radar_chart.set_data(
-                [s.name for s in top],
-                [s.level for s in top],
-                max_val=5,
+                [s.name for s in top], [s.level for s in top], max_val=5
             )
         else:
             self.radar_chart.set_data([], [])
 
-        # 柱状图：类别分布
         stats = self.manager.get_statistics()
         by_cat = stats.get("by_category", {})
         if by_cat:
@@ -134,18 +101,32 @@ class SkillPage(BasePage):
         else:
             self.bar_chart.set_data([], [])
 
+    # ---- 右键菜单 ----
+
+    def _build_context_menu(self) -> QMenu | None:
+        skill_id = self._get_selected_id()
+        if not skill_id:
+            return None
+        menu = QMenu(self)
+        menu.addAction("编辑", self._open_edit_dialog)
+        menu.addSeparator()
+        menu.addAction("删除", self._confirm_delete)
+        return menu
+
     # ---- 添加 ----
 
     def _open_add_dialog(self) -> None:
-        categories = self.manager.get_all_categories() or self.manager.VALID_CATEGORIES
+        categories = self.manager.get_all_categories() or ["编程", "语言", "工具", "其他"]
         fields = [
-            {"name": "name", "label": "技能名称", "type": "text", "required": True},
-            {"name": "category", "label": "类别", "type": "combobox", "options": categories},
-            {"name": "level", "label": "熟练度", "type": "spinbox", "from_": 1, "to": 5},
-            {"name": "hours_spent", "label": "学习时长(h)", "type": "text"},
-            {"name": "description", "label": "描述", "type": "textarea"},
+            {"key": "name", "label": "技能名称", "type": "text", "required": True},
+            {"key": "category", "label": "类别", "type": "combo", "options": categories},
+            {"key": "level", "label": "熟练度", "type": "spinbox", "from_": 1, "to": 5},
+            {"key": "hours_spent", "label": "学习时长(h)", "type": "text"},
+            {"key": "description", "label": "描述", "type": "textarea"},
         ]
-        FormDialog(self, "添加技能", fields, on_save=self._do_add)
+        data = FormDialog.get_form_data(self, "添加技能", fields)
+        if data:
+            self._do_add(data)
 
     def _do_add(self, data: dict) -> None:
         try:
@@ -153,12 +134,13 @@ class SkillPage(BasePage):
             hours = float(data["hours_spent"]) if data["hours_spent"] else 0.0
             self.manager.add_skill(
                 name=data["name"], category=data["category"],
-                level=level, hours_spent=hours, description=data.get("description", "")
+                level=level, hours_spent=hours,
+                description=data.get("description", "")
             )
             self.refresh()
-            self.set_status(f"技能「{data['name']}」已添加")
+            self.emit_status(f"技能「{data['name']}」已添加")
         except Exception as e:
-            messagebox.showerror("添加失败", str(e))
+            QMessageBox.critical(self, "添加失败", str(e))
 
     # ---- 编辑 ----
 
@@ -166,22 +148,22 @@ class SkillPage(BasePage):
         skill = self._get_selected()
         if not skill:
             return
-
-        categories = self.manager.get_all_categories() or self.manager.VALID_CATEGORIES
+        categories = self.manager.get_all_categories() or ["编程", "语言", "工具", "其他"]
         fields = [
-            {"name": "name", "label": "技能名称", "type": "text", "required": True},
-            {"name": "category", "label": "类别", "type": "combobox", "options": categories},
-            {"name": "level", "label": "熟练度", "type": "spinbox", "from_": 1, "to": 5},
-            {"name": "hours_spent", "label": "学习时长(h)", "type": "text"},
-            {"name": "description", "label": "描述", "type": "textarea"},
+            {"key": "name", "label": "技能名称", "type": "text", "required": True},
+            {"key": "category", "label": "类别", "type": "combo", "options": categories},
+            {"key": "level", "label": "熟练度", "type": "spinbox", "from_": 1, "to": 5},
+            {"key": "hours_spent", "label": "学习时长(h)", "type": "text"},
+            {"key": "description", "label": "描述", "type": "textarea"},
         ]
         initial = {
             "name": skill.name, "category": skill.category,
             "level": skill.level, "hours_spent": str(skill.hours_spent),
             "description": skill.description,
         }
-        FormDialog(self, "编辑技能", fields, on_save=lambda d: self._do_edit(skill.id, d),
-                   initial_data=initial)
+        data = FormDialog.get_form_data(self, "编辑技能", fields, initial)
+        if data:
+            self._do_edit(skill.id, data)
 
     def _do_edit(self, skill_id: str, data: dict) -> None:
         try:
@@ -193,9 +175,9 @@ class SkillPage(BasePage):
             }
             self.manager.update_skill(skill_id, **updates)
             self.refresh()
-            self.set_status(f"技能「{data['name']}」已更新")
+            self.emit_status(f"技能「{data['name']}」已更新")
         except Exception as e:
-            messagebox.showerror("编辑失败", str(e))
+            QMessageBox.critical(self, "编辑失败", str(e))
 
     # ---- 删除 ----
 
@@ -206,7 +188,7 @@ class SkillPage(BasePage):
         if ConfirmDialog.show(self, "确认删除", f"确定要删除技能「{skill.name}」吗？"):
             self.manager.delete_skill(skill.id)
             self.refresh()
-            self.set_status(f"技能「{skill.name}」已删除")
+            self.emit_status(f"技能「{skill.name}」已删除")
 
     # ---- 筛选和搜索 ----
 
@@ -215,81 +197,80 @@ class SkillPage(BasePage):
             self.refresh()
             return
         results = self.manager.search(keyword)
-        self._populate_tree(results)
+        self._populate_table(results)
 
-    def _on_filter(self) -> None:
-        category = self.category_filter.get()
+    def _on_filter(self, category: str) -> None:
         if not category or category == "全部":
             self.refresh()
             return
         results = self.manager.get_by_category(category)
-        self._populate_tree(results)
+        self._populate_table(results)
 
     # ---- 数据加载 ----
 
     def refresh(self) -> None:
-        """重新加载技能列表、图表和筛选选项。"""
         skills = self.manager.get_all()
-        self._populate_tree(skills)
-
+        self._populate_table(skills)
         self._load_chart_data()
 
-        # 更新类别筛选
         categories = self.manager.get_all_categories()
-        self.category_filter["values"] = ["全部"] + categories
-        if not self.category_filter.get():
-            self.category_filter.set("全部")
+        self.category_filter.blockSignals(True)
+        self.category_filter.clear()
+        self.category_filter.addItem("全部")
+        self.category_filter.addItems(categories)
+        self.category_filter.setCurrentIndex(0)
+        self.category_filter.blockSignals(False)
 
-        # 更新统计栏
         stats = self.manager.get_statistics()
         parts = [f"共 {stats['total']} 项技能"]
         if stats["total"] > 0:
             parts.append(f"总学习时长: {stats['total_hours']:.1f}h")
             parts.append(f"平均熟练度: {stats['avg_level']}/5")
-        self.stats_var.set("  |  ".join(parts))
+        self._set_stats_text("  |  ".join(parts))
 
-    def _populate_tree(self, skills: list[Skill]) -> None:
-        self._clear_tree()
+    def _populate_table(self, skills: list[Skill]) -> None:
+        self._clear_table()
         for s in skills:
-            self.tree.insert("", tk.END, iid=s.id, values=(
-                s.name, s.category, f"{s.level}/5", s.hours_spent, s.description
-            ))
+            self._add_row([
+                s.name, s.category, f"{s.level}/5",
+                str(s.hours_spent), s.description
+            ], item_id=s.id)
 
     def _get_selected(self) -> Skill | None:
         skill_id = self._get_selected_id()
         if not skill_id:
+            QMessageBox.information(self, "提示", "请先选中一条记录")
             return None
         return self.manager.get_by_id(skill_id)
 
-    # ---- CSV 导入导出 ----
+    # ---- CSV ----
 
     def _export_csv(self) -> None:
-        path = filedialog.asksaveasfilename(
-            defaultextension=".csv",
-            filetypes=[("CSV 文件", "*.csv")],
-            initialfile="skills.csv"
+        path, _ = QFileDialog.getSaveFileName(
+            self, "导出技能数据", "skills.csv", "CSV 文件 (*.csv)"
         )
         if path:
             try:
                 self.manager.export_csv(path)
-                self.set_status(f"技能数据已导出到 {path}")
+                self.emit_status(f"技能数据已导出到 {path}")
             except Exception as e:
-                messagebox.showerror("导出失败", str(e))
+                QMessageBox.critical(self, "导出失败", str(e))
 
     def _import_csv(self) -> None:
-        path = filedialog.askopenfilename(
-            filetypes=[("CSV 文件", "*.csv")]
+        path, _ = QFileDialog.getOpenFileName(
+            self, "导入技能数据", "", "CSV 文件 (*.csv)"
         )
         if path:
-            CSVPreviewDialog(self, path, on_confirm=self._do_import_csv)
+            dialog = CSVPreviewDialog(self, path, on_confirm=self._do_import_csv)
+            dialog.exec()
 
     def _do_import_csv(self, path: str) -> None:
         try:
             result = self.manager.import_csv(path)
             self.refresh()
             msg = f"导入完成：成功 {result['success']} 条"
-            if result["failed"]:
+            if result.get("failed"):
                 msg += f"，失败 {result['failed']} 条"
-            self.set_status(msg)
+            self.emit_status(msg)
         except Exception as e:
-            messagebox.showerror("导入失败", str(e))
+            QMessageBox.critical(self, "导入失败", str(e))
